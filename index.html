@@ -14,6 +14,7 @@
 </head>
 <body>
 <main class="app">
+
   <section id="loginScreen" class="screen active">
     <div class="login-page">
       <div class="login-brand">
@@ -29,15 +30,24 @@
         <div class="pin-visual" id="pinVisual" aria-hidden="true">
           <span></span><span></span><span></span><span></span>
         </div>
-        <input id="pin" class="pin-hidden" type="password" inputmode="numeric"
-               maxlength="4" autocomplete="one-time-code" aria-label="קוד אישי">
+
+        <input id="pin"
+               class="pin-hidden"
+               type="password"
+               inputmode="numeric"
+               maxlength="4"
+               autocomplete="one-time-code"
+               aria-label="קוד אישי">
 
         <div class="langs">
-          <button id="he" class="active" onclick="lang('he')">עברית 🇮🇱</button>
-          <button id="ru" onclick="lang('ru')">Русский 🇷🇺</button>
+          <button id="he" class="active" onclick="setLang('he')">עברית 🇮🇱</button>
+          <button id="ru" onclick="setLang('ru')">Русский 🇷🇺</button>
         </div>
 
-        <button class="main-btn login-submit" onclick="login()">אישור</button>
+        <button id="loginButton" class="main-btn login-submit" onclick="login()">
+          אישור
+        </button>
+
         <div id="loginMsg" class="msg"></div>
       </div>
     </div>
@@ -54,93 +64,857 @@
       </div>
       <button class="menu-btn" aria-label="תפריט">☰</button>
     </header>
+
     <div class="hero card">
-      <h2 id="hello" class="hello"></h2><div id="homeSub" class="sub"></div>
-      <div id="status" class="status"><div class="status-line"><span class="dot"></span><span id="statusText">טוען...</span></div><div id="time" class="time"></div></div>
-      <button id="startBtn" class="action start" onclick="startWork()">🟢 התחל עבודה</button>
-      <button id="endBtn" class="action end hidden" onclick="endWork()">🔴 סיים עבודה</button>
+      <h2 id="hello" class="hello"></h2>
+      <div id="homeSub" class="sub">הנוכחות שלך להיום</div>
+
+      <div id="status" class="status">
+        <div class="status-line">
+          <span class="dot"></span>
+          <span id="statusText">טוען...</span>
+        </div>
+        <div id="time" class="time"></div>
+      </div>
+
+      <button id="startBtn" class="action start" onclick="startWork()">
+        🟢 התחל עבודה
+      </button>
+
+      <button id="endBtn" class="action end hidden" onclick="endWork()">
+        🔴 סיים עבודה
+      </button>
     </div>
+
     <div class="secondary-grid">
-      <button class="tile" onclick="openManual()"><div class="tile-icon">✏️</div><div class="tile-title">תיקון שעות</div><div class="tile-sub">דיווח ידני</div></button>
-      <button class="tile" onclick="openAbsence()"><div class="tile-icon">📅</div><div class="tile-title">חופשה / היעדרות</div><div class="tile-sub">דיווח חדש</div></button>
+      <button class="tile" onclick="openManual()">
+        <div class="tile-icon">✏️</div>
+        <div class="tile-title">תיקון שעות</div>
+        <div class="tile-sub">דיווח ידני</div>
+      </button>
+
+      <button class="tile" onclick="openAbsence()">
+        <div class="tile-icon">📅</div>
+        <div class="tile-title">חופשה / היעדרות</div>
+        <div class="tile-sub">דיווח חדש</div>
+      </button>
     </div>
+
     <button class="logout" onclick="logout()">התנתקות</button>
   </section>
 
   <section id="historyScreen" class="screen">
-    <div class="section-head"><button class="back" onclick="show('homeScreen')">→</button><h2>📋 ההיסטוריה שלי</h2></div>
+    <div class="section-head">
+      <button class="back" onclick="show('homeScreen')">→</button>
+      <h2>📋 ההיסטוריה שלי</h2>
+    </div>
+
     <div id="summary" class="summary"></div>
-    <div class="filters"><button class="filter active" data-f="all">הכל</button><button class="filter" data-f="work">🕐 עבודה</button><button class="filter" data-f="sick">🤒 מחלה</button><button class="filter" data-f="vacation">🏖️ חופשה</button><button class="filter" data-f="absence">🚫 היעדרות</button></div>
+
+    <div class="filters">
+      <button class="filter active" data-f="all">הכל</button>
+      <button class="filter" data-f="work">🕐 עבודה</button>
+      <button class="filter" data-f="sick">🤒 מחלה</button>
+      <button class="filter" data-f="vacation">🏖️ חופשה</button>
+      <button class="filter" data-f="absence">🚫 היעדרות</button>
+    </div>
+
     <div id="history"></div>
   </section>
+
 </main>
 
 <nav id="nav" class="bottom">
-  <button class="nav active" onclick="show('homeScreen')"><i>⌂</i>בית</button>
-  <button class="nav" onclick="showHistory()"><i>▣</i>היסטוריה</button>
-  <button class="nav" onclick="openAbsence()"><i>＋</i>דיווח</button>
+  <button class="nav active" onclick="show('homeScreen')">
+    <i>⌂</i>בית
+  </button>
+  <button class="nav" onclick="showHistory()">
+    <i>▣</i>היסטוריה
+  </button>
+  <button class="nav" onclick="openAbsence()">
+    <i>＋</i>דיווח
+  </button>
 </nav>
 
-<div id="modal" class="modal-wrap hidden"></div><div id="toast" class="toast"></div>
+<div id="modal" class="modal-wrap hidden"></div>
+<div id="toast" class="toast"></div>
 
 <script>
-const API_URL="https://script.google.com/macros/s/AKfycbxxw9oLXorL9GT4OqK-1gwedpUDzsY6kOx3kOZD1JSyccynAfcYWk2v4jmrUmYhu_xL/exec";
-let session=JSON.parse(localStorage.getItem("gan_session")||"null"), currentLang=localStorage.getItem("gan_lang")||"he", allHistory=[];
+/* ==================================================
+   CONFIG
+   ================================================== */
 
-function lang(x){currentLang=x;localStorage.setItem("gan_lang",x);document.documentElement.lang=x;document.documentElement.dir="rtl";document.getElementById("he").classList.toggle("active",x==="he");document.getElementById("ru").classList.toggle("active",x==="ru");}
-function show(id){document.querySelectorAll(".screen").forEach(x=>x.classList.remove("active"));document.getElementById(id).classList.add("active");document.querySelectorAll(".nav").forEach((x,i)=>x.classList.toggle("active",(id==="homeScreen"&&i===0)||(id==="historyScreen"&&i===1)));window.scrollTo(0,0)}
-function toast(t){let x=document.getElementById("toast");x.textContent=t;x.classList.add("show");clearTimeout(window.__t);window.__t=setTimeout(()=>x.classList.remove("show"),2500)}
-function today(){document.getElementById("today").textContent=new Intl.DateTimeFormat(currentLang==="ru"?"ru-RU":"he-IL",{weekday:"long",day:"numeric",month:"long",year:"numeric"}).format(new Date())}
-function jsonp(action,params={}){
-  return new Promise((resolve,reject)=>{
-    if(API_URL.includes("PASTE_")) return reject(new Error("יש להגדיר את כתובת ה-Apps Script"));
-    const cb="cb_"+Date.now()+"_"+Math.random().toString(36).slice(2), s=document.createElement("script");
-    const q=new URLSearchParams({action,callback:cb,...params}); s.src=API_URL+"?"+q.toString();
-    window[cb]=data=>{delete window[cb];s.remove();resolve(data)};s.onerror=()=>{delete window[cb];s.remove();reject(new Error("לא ניתן להתחבר לשרת"))};
-    document.body.appendChild(s);
-    setTimeout(()=>{if(window[cb]){delete window[cb];s.remove();reject(new Error("החיבור ארך זמן רב מדי"))}},15000);
+const API_URL =
+  "https://script.google.com/macros/s/AKfycbxxw9oLXorL9GT4OqK-1gwedpUDzsY6kOx3kOZD1JSyccynAfcYWk2v4jmrUmYhu_xL/exec";
+
+const SESSION_KEY = "gan_session_v2";
+const LANG_KEY = "gan_lang";
+
+let session = null;
+let currentLang = localStorage.getItem(LANG_KEY) || "he";
+let allHistory = [];
+let requestInProgress = false;
+
+
+/* ==================================================
+   BASIC UI
+   ================================================== */
+
+function $(id) {
+  return document.getElementById(id);
+}
+
+function show(id) {
+  document.querySelectorAll(".screen")
+    .forEach(x => x.classList.remove("active"));
+
+  const screen = $(id);
+  if (screen) screen.classList.add("active");
+
+  document.querySelectorAll(".nav")
+    .forEach((x, i) => {
+      const active =
+        (id === "homeScreen" && i === 0) ||
+        (id === "historyScreen" && i === 1);
+
+      x.classList.toggle("active", active);
+    });
+
+  window.scrollTo(0, 0);
+}
+
+function toast(message) {
+  const box = $("toast");
+  box.textContent = message;
+  box.classList.add("show");
+
+  clearTimeout(window.__toastTimer);
+
+  window.__toastTimer = setTimeout(() => {
+    box.classList.remove("show");
+  }, 2500);
+}
+
+function setLang(lang) {
+  currentLang = lang;
+  localStorage.setItem(LANG_KEY, lang);
+
+  document.documentElement.lang = lang;
+  document.documentElement.dir = "rtl";
+
+  $("he").classList.toggle("active", lang === "he");
+  $("ru").classList.toggle("active", lang === "ru");
+
+  updateToday();
+}
+
+function updateToday() {
+  $("today").textContent =
+    new Intl.DateTimeFormat(
+      currentLang === "ru" ? "ru-RU" : "he-IL",
+      {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric"
+      }
+    ).format(new Date());
+}
+
+
+/* ==================================================
+   JSONP — מנגנון תקשורת יחיד ופשוט
+   ================================================== */
+
+function api(action, params = {}) {
+  return new Promise((resolve, reject) => {
+
+    const callbackName =
+      "gan_cb_" +
+      Date.now() +
+      "_" +
+      Math.random().toString(36).slice(2);
+
+    const script = document.createElement("script");
+
+    const query = new URLSearchParams({
+      action: action,
+      callback: callbackName,
+      _ts: String(Date.now()),
+      ...params
+    });
+
+    let finished = false;
+
+    function cleanup() {
+      if (finished) return;
+      finished = true;
+
+      clearTimeout(timeout);
+
+      try {
+        delete window[callbackName];
+      } catch (_) {}
+
+      script.remove();
+    }
+
+    const timeout = setTimeout(() => {
+      cleanup();
+      reject(new Error("השרת לא הגיב בזמן"));
+    }, 20000);
+
+    window[callbackName] = function(data) {
+      cleanup();
+      resolve(data);
+    };
+
+    script.onerror = function() {
+      cleanup();
+      reject(new Error("לא ניתן להתחבר לשרת"));
+    };
+
+    script.src = API_URL + "?" + query.toString();
+    document.body.appendChild(script);
   });
 }
-async function login(){
-  const pin=document.getElementById("pin").value.trim(), msg=document.getElementById("loginMsg");msg.textContent="";
-  try{const r=await jsonp("login",{pin});if(!r.success){msg.textContent=r.message||"קוד אישי שגוי";msg.className="msg error";return}
-    session=r.session;localStorage.setItem("gan_session",JSON.stringify(session));enterHome(r.todayStatus);
-  }catch(e){msg.textContent=e.message;msg.className="msg error"}
-}
-function applyStatus(r){if(!r)return;document.getElementById("statusText").textContent=r.started?"את כרגע בעבודה":r.ended?"המשמרת האחרונה הסתיימה":"עדיין לא התחלת לעבוד";document.getElementById("time").textContent=r.started?(r.startTime||""):"";document.getElementById("status").classList.toggle("work",!!r.started);document.getElementById("startBtn").classList.toggle("hidden",!!r.started);document.getElementById("endBtn").classList.toggle("hidden",!r.started)}
-function enterHome(todayStatus){document.getElementById("hello").textContent=`שלום, ${session.name} 👋`;document.getElementById("homeSub").textContent="הנוכחות שלך להיום";document.getElementById("nav").classList.add("show");today();show("homeScreen");if(todayStatus)applyStatus(todayStatus)}
-async function loadStatus(){try{const r=await jsonp("status",{token:session.token});if(!r.success){logout();return}applyStatus(r)}catch(e){toast(e.message)}}
-async function startWork(){try{const r=await jsonp("start",{token:session.token});if(!r.success){toast(r.message);return}applyStatus({started:true,ended:false,startTime:r.time||""});toast("העבודה התחילה ✅")}catch(e){toast(e.message)}}
-async function endWork(){try{const r=await jsonp("end",{token:session.token});if(!r.success){toast(r.message);return}applyStatus({started:false,ended:true,startTime:null});toast("העבודה הסתיימה ✅")}catch(e){toast(e.message)}}
-function logout(){localStorage.removeItem("gan_session");session=null;document.getElementById("nav").classList.remove("show");show("loginScreen")}
-function openModal(inner){document.getElementById("modal").innerHTML=`<div class="modal">${inner}</div>`;document.getElementById("modal").classList.remove("hidden")}
-function closeModal(){document.getElementById("modal").classList.add("hidden")}
-function openManual(){openModal(`<div class="section-head"><button class="back" onclick="closeModal()">→</button><h2>✏️ תיקון שעות</h2></div><div class="label">תאריך</div><input id="md" class="field" type="date"><div class="label">שעת התחלה</div><input id="ms" class="field" type="time"><div class="label">שעת סיום</div><input id="me" class="field" type="time"><button class="main-btn" onclick="saveManual()">שמור שעות</button><button class="cancel" onclick="closeModal()">ביטול</button>`)}
-async function saveManual(){try{const r=await jsonp("manual",{token:session.token,date:md.value,start:ms.value,end:me.value});if(!r.success){toast(r.message);return}closeModal();toast("השעות נשמרו ✅")}catch(e){toast(e.message)}}
-function openAbsence(){openModal(`<div class="section-head"><button class="back" onclick="closeModal()">→</button><h2>📅 חופשה / היעדרות</h2></div><div class="label">סוג דיווח</div><select id="at" class="field"><option value="חופשה">🏖️ חופשה</option><option value="מחלה">🤒 מחלה</option><option value="היעדרות">🚫 היעדרות</option></select><div class="label">מתאריך</div><input id="af" class="field" type="date"><div class="label">עד תאריך</div><input id="ao" class="field" type="date"><div class="label">הערה</div><textarea id="an" class="field area" placeholder="לא חובה"></textarea><button class="main-btn" onclick="saveAbs()">שמור דיווח</button><button class="cancel" onclick="closeModal()">ביטול</button>`)}
-async function saveAbs(){try{const r=await jsonp("absence",{token:session.token,type:at.value,from:af.value,to:ao.value,note:an.value});if(!r.success){toast(r.message);return}closeModal();toast("הדיווח נשמר ✅")}catch(e){toast(e.message)}}
-async function showHistory(){show("historyScreen");document.getElementById("history").textContent="טוען...";try{const r=await jsonp("history",{token:session.token});if(!r.success){toast(r.message);return}allHistory=r.history||[];renderHistory("all")}catch(e){toast(e.message)}}
-document.querySelectorAll(".filter").forEach(b=>b.onclick=()=>{document.querySelectorAll(".filter").forEach(x=>x.classList.remove("active"));b.classList.add("active");renderHistory(b.dataset.f)})
-function renderHistory(filter){let h=allHistory.filter(x=>filter==="all"||(filter==="work"&&x.source==="attendance")||(filter==="sick"&&x.absenceType==="מחלה")||(filter==="vacation"&&x.absenceType==="חופשה")||(filter==="absence"&&x.absenceType==="היעדרות"));let mins=0,w=0,s=0,v=0,a=0;allHistory.forEach(x=>{if(x.source==="attendance"){w++;if(x.start&&x.end){let [sh,sm]=x.start.split(":").map(Number),[eh,em]=x.end.split(":").map(Number);mins+=Math.max(0,eh*60+em-sh*60-sm)}}else if(x.absenceType==="מחלה")s++;else if(x.absenceType==="חופשה")v++;else a++});document.getElementById("summary").innerHTML=`<div class="summary-grid"><div><div class="sum-label">שעות עבודה</div><div class="sum-value">${String(Math.floor(mins/60)).padStart(2,"0")}:${String(mins%60).padStart(2,"0")}</div></div><div><div class="sum-label">דיווחי עבודה</div><div class="sum-value">${w}</div></div><div><div class="sum-label">חופשה</div><div class="sum-value">${v}</div></div><div><div class="sum-label">מחלה / היעדרות</div><div class="sum-value">${s+a}</div></div></div>`;document.getElementById("history").innerHTML=h.length?h.map(x=>x.source==="attendance"?`<article class="row"><div class="row-top"><div class="date">${x.date.split("-").reverse().join("/")}</div><div class="type">🕐 עבודה</div></div><div class="times">${x.start||"--:--"} → ${x.end||"--:--"} <span class="total">${x.total||""}</span></div>${x.note?`<div class="note">💬 ${escapeHtml(x.note)}</div>`:""}</article>`:`<article class="row"><div class="row-top"><div class="date">${x.absenceFrom?x.absenceFrom.split("-").reverse().join("/"):x.date}</div><div class="type">${x.absenceType==="מחלה"?"🤒":x.absenceType==="חופשה"?"🏖️":"🚫"} ${x.absenceType}</div></div><div class="times">${x.absenceFrom&&x.absenceTo?x.absenceFrom.split("-").reverse().join("/")+" → "+x.absenceTo.split("-").reverse().join("/"):x.date}</div>${x.note?`<div class="note">💬 ${escapeHtml(x.note)}</div>`:""}</article>`).join(""):`<div style="text-align:center;color:var(--muted);padding:40px">אין דיווחים להצגה</div>`}
-function escapeHtml(x){return String(x||"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
-if(session){enterHome()}else{lang(currentLang)}
 
-const pinInput=document.getElementById("pin");
-const pinBoxes=[...document.querySelectorAll("#pinVisual span")];
-function syncPinVisual(){
-  const value=pinInput.value||"";
-  pinBoxes.forEach((b,i)=>{
-    b.textContent=value[i]?"•":"";
-    b.classList.toggle("filled",!!value[i]);
+
+/* ==================================================
+   LOGIN
+   ================================================== */
+
+async function login() {
+  if (requestInProgress) return;
+
+  const pin = $("pin").value.trim();
+  const msg = $("loginMsg");
+  const button = $("loginButton");
+
+  msg.textContent = "";
+  msg.className = "msg";
+
+  if (!/^\d{4}$/.test(pin)) {
+    msg.textContent = "יש להזין קוד בן 4 ספרות";
+    msg.className = "msg error";
+    return;
+  }
+
+  requestInProgress = true;
+  button.disabled = true;
+  button.textContent = "מתחברת...";
+
+  try {
+    const result = await api("login", { pin: pin });
+
+    if (!result || !result.success) {
+      msg.textContent =
+        (result && result.message) || "קוד אישי שגוי";
+
+      msg.className = "msg error";
+      return;
+    }
+
+    session = result.session;
+
+    localStorage.setItem(
+      SESSION_KEY,
+      JSON.stringify(session)
+    );
+
+    enterHome(result.status);
+
+  } catch (error) {
+    msg.textContent = error.message || "שגיאת חיבור";
+    msg.className = "msg error";
+
+  } finally {
+    requestInProgress = false;
+    button.disabled = false;
+    button.textContent = "אישור";
+  }
+}
+
+
+/* ==================================================
+   HOME / STATUS
+   ================================================== */
+
+function enterHome(status) {
+  $("hello").textContent =
+    "שלום, " + session.name + " 👋";
+
+  $("homeSub").textContent =
+    "הנוכחות שלך להיום";
+
+  $("nav").classList.add("show");
+
+  updateToday();
+  show("homeScreen");
+
+  if (status) {
+    applyStatus(status);
+  } else {
+    loadStatus();
+  }
+}
+
+function applyStatus(status) {
+  if (!status) return;
+
+  $("statusText").textContent =
+    status.started
+      ? "את כרגע בעבודה"
+      : status.ended
+        ? "המשמרת האחרונה הסתיימה"
+        : "עדיין לא התחלת לעבוד";
+
+  $("time").textContent =
+    status.started ? (status.startTime || "") : "";
+
+  $("status").classList.toggle(
+    "work",
+    !!status.started
+  );
+
+  $("startBtn").classList.toggle(
+    "hidden",
+    !!status.started
+  );
+
+  $("endBtn").classList.toggle(
+    "hidden",
+    !status.started
+  );
+}
+
+async function loadStatus() {
+  try {
+    const result = await api("status", {
+      token: session.token
+    });
+
+    if (!result.success) {
+      logout();
+      return;
+    }
+
+    applyStatus(result);
+
+  } catch (error) {
+    toast(error.message);
+  }
+}
+
+
+/* ==================================================
+   WORK
+   ================================================== */
+
+async function startWork() {
+  if (requestInProgress) return;
+
+  requestInProgress = true;
+
+  try {
+    const result = await api("start", {
+      token: session.token
+    });
+
+    if (!result.success) {
+      toast(result.message);
+      return;
+    }
+
+    applyStatus({
+      success: true,
+      started: true,
+      ended: false,
+      startTime: result.time || ""
+    });
+
+    toast("העבודה התחילה ✅");
+
+  } catch (error) {
+    toast(error.message);
+
+  } finally {
+    requestInProgress = false;
+  }
+}
+
+async function endWork() {
+  if (requestInProgress) return;
+
+  requestInProgress = true;
+
+  try {
+    const result = await api("end", {
+      token: session.token
+    });
+
+    if (!result.success) {
+      toast(result.message);
+      return;
+    }
+
+    applyStatus({
+      success: true,
+      started: false,
+      ended: true,
+      startTime: ""
+    });
+
+    toast("העבודה הסתיימה ✅");
+
+  } catch (error) {
+    toast(error.message);
+
+  } finally {
+    requestInProgress = false;
+  }
+}
+
+
+/* ==================================================
+   LOGOUT
+   ================================================== */
+
+function logout() {
+  session = null;
+  localStorage.removeItem(SESSION_KEY);
+
+  $("nav").classList.remove("show");
+  $("pin").value = "";
+  syncPinVisual();
+  $("loginMsg").textContent = "";
+
+  show("loginScreen");
+}
+
+
+/* ==================================================
+   MODALS
+   ================================================== */
+
+function openModal(html) {
+  $("modal").innerHTML =
+    '<div class="modal">' + html + "</div>";
+
+  $("modal").classList.remove("hidden");
+}
+
+function closeModal() {
+  $("modal").classList.add("hidden");
+}
+
+
+/* ==================================================
+   MANUAL HOURS
+   ================================================== */
+
+function openManual() {
+  openModal(`
+    <div class="section-head">
+      <button class="back" onclick="closeModal()">→</button>
+      <h2>✏️ תיקון שעות</h2>
+    </div>
+
+    <div class="label">תאריך</div>
+    <input id="md" class="field" type="date">
+
+    <div class="label">שעת התחלה</div>
+    <input id="ms" class="field" type="time">
+
+    <div class="label">שעת סיום</div>
+    <input id="me" class="field" type="time">
+
+    <button class="main-btn" onclick="saveManual()">
+      שמור שעות
+    </button>
+
+    <button class="cancel" onclick="closeModal()">
+      ביטול
+    </button>
+  `);
+}
+
+async function saveManual() {
+  try {
+    const result = await api("manual", {
+      token: session.token,
+      date: $("md").value,
+      start: $("ms").value,
+      end: $("me").value
+    });
+
+    if (!result.success) {
+      toast(result.message);
+      return;
+    }
+
+    closeModal();
+    toast("השעות נשמרו ✅");
+
+  } catch (error) {
+    toast(error.message);
+  }
+}
+
+
+/* ==================================================
+   ABSENCE
+   ================================================== */
+
+function openAbsence() {
+  openModal(`
+    <div class="section-head">
+      <button class="back" onclick="closeModal()">→</button>
+      <h2>📅 חופשה / היעדרות</h2>
+    </div>
+
+    <div class="label">סוג דיווח</div>
+    <select id="at" class="field">
+      <option value="חופשה">🏖️ חופשה</option>
+      <option value="מחלה">🤒 מחלה</option>
+      <option value="היעדרות">🚫 היעדרות</option>
+    </select>
+
+    <div class="label">מתאריך</div>
+    <input id="af" class="field" type="date">
+
+    <div class="label">עד תאריך</div>
+    <input id="ao" class="field" type="date">
+
+    <div class="label">הערה</div>
+    <textarea id="an"
+              class="field area"
+              placeholder="לא חובה"></textarea>
+
+    <button class="main-btn" onclick="saveAbs()">
+      שמור דיווח
+    </button>
+
+    <button class="cancel" onclick="closeModal()">
+      ביטול
+    </button>
+  `);
+}
+
+async function saveAbs() {
+  try {
+    const result = await api("absence", {
+      token: session.token,
+      type: $("at").value,
+      from: $("af").value,
+      to: $("ao").value,
+      note: $("an").value
+    });
+
+    if (!result.success) {
+      toast(result.message);
+      return;
+    }
+
+    closeModal();
+    toast("הדיווח נשמר ✅");
+
+  } catch (error) {
+    toast(error.message);
+  }
+}
+
+
+/* ==================================================
+   HISTORY
+   ================================================== */
+
+async function showHistory() {
+  show("historyScreen");
+
+  $("history").textContent = "טוען...";
+
+  try {
+    const result = await api("history", {
+      token: session.token
+    });
+
+    if (!result.success) {
+      toast(result.message);
+      return;
+    }
+
+    allHistory = result.history || [];
+    renderHistory("all");
+
+  } catch (error) {
+    toast(error.message);
+  }
+}
+
+document.querySelectorAll(".filter").forEach(button => {
+  button.onclick = function() {
+    document
+      .querySelectorAll(".filter")
+      .forEach(x => x.classList.remove("active"));
+
+    button.classList.add("active");
+    renderHistory(button.dataset.f);
+  };
+});
+
+function renderHistory(filter) {
+  const history = allHistory.filter(item => {
+    if (filter === "all") return true;
+
+    if (filter === "work") {
+      return item.source === "attendance";
+    }
+
+    if (filter === "sick") {
+      return item.absenceType === "מחלה";
+    }
+
+    if (filter === "vacation") {
+      return item.absenceType === "חופשה";
+    }
+
+    if (filter === "absence") {
+      return item.absenceType === "היעדרות";
+    }
+
+    return true;
+  });
+
+  let minutes = 0;
+  let work = 0;
+  let sick = 0;
+  let vacation = 0;
+  let absence = 0;
+
+  allHistory.forEach(item => {
+    if (item.source === "attendance") {
+      work++;
+
+      if (item.start && item.end) {
+        const a = item.start.split(":").map(Number);
+        const b = item.end.split(":").map(Number);
+
+        minutes += Math.max(
+          0,
+          b[0] * 60 + b[1] -
+          a[0] * 60 - a[1]
+        );
+      }
+
+    } else if (item.absenceType === "מחלה") {
+      sick++;
+
+    } else if (item.absenceType === "חופשה") {
+      vacation++;
+
+    } else {
+      absence++;
+    }
+  });
+
+  $("summary").innerHTML = `
+    <div class="summary-grid">
+      <div>
+        <div class="sum-label">שעות עבודה</div>
+        <div class="sum-value">
+          ${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}
+        </div>
+      </div>
+
+      <div>
+        <div class="sum-label">דיווחי עבודה</div>
+        <div class="sum-value">${work}</div>
+      </div>
+
+      <div>
+        <div class="sum-label">חופשה</div>
+        <div class="sum-value">${vacation}</div>
+      </div>
+
+      <div>
+        <div class="sum-label">מחלה / היעדרות</div>
+        <div class="sum-value">${sick + absence}</div>
+      </div>
+    </div>
+  `;
+
+  if (!history.length) {
+    $("history").innerHTML =
+      '<div style="text-align:center;color:var(--muted);padding:40px">אין דיווחים להצגה</div>';
+    return;
+  }
+
+  $("history").innerHTML = history.map(item => {
+
+    if (item.source === "attendance") {
+      return `
+        <article class="row">
+          <div class="row-top">
+            <div class="date">
+              ${formatDate(item.date)}
+            </div>
+            <div class="type">🕐 עבודה</div>
+          </div>
+
+          <div class="times">
+            ${item.start || "--:--"}
+            →
+            ${item.end || "--:--"}
+            <span class="total">${item.total || ""}</span>
+          </div>
+
+          ${
+            item.note
+              ? `<div class="note">💬 ${escapeHtml(item.note)}</div>`
+              : ""
+          }
+        </article>
+      `;
+    }
+
+    const icon =
+      item.absenceType === "מחלה"
+        ? "🤒"
+        : item.absenceType === "חופשה"
+          ? "🏖️"
+          : "🚫";
+
+    return `
+      <article class="row">
+        <div class="row-top">
+          <div class="date">
+            ${formatDate(item.absenceFrom)}
+          </div>
+
+          <div class="type">
+            ${icon} ${escapeHtml(item.absenceType)}
+          </div>
+        </div>
+
+        <div class="times">
+          ${formatDate(item.absenceFrom)}
+          →
+          ${formatDate(item.absenceTo)}
+        </div>
+
+        ${
+          item.note
+            ? `<div class="note">💬 ${escapeHtml(item.note)}</div>`
+            : ""
+        }
+      </article>
+    `;
+  }).join("");
+}
+
+function formatDate(value) {
+  if (!value) return "";
+
+  return String(value)
+    .split("-")
+    .reverse()
+    .join("/");
+}
+
+function escapeHtml(value) {
+  return String(value || "").replace(
+    /[&<>"']/g,
+    function(char) {
+      return {
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+      }[char];
+    }
+  );
+}
+
+
+/* ==================================================
+   PIN VISUAL
+   ================================================== */
+
+const pinInput = $("pin");
+const pinBoxes =
+  [...document.querySelectorAll("#pinVisual span")];
+
+function syncPinVisual() {
+  const value = pinInput.value || "";
+
+  pinBoxes.forEach((box, index) => {
+    box.textContent = value[index] ? "•" : "";
+    box.classList.toggle(
+      "filled",
+      !!value[index]
+    );
   });
 }
-pinInput.addEventListener("input",syncPinVisual);
-pinInput.addEventListener("focus",()=>document.getElementById("pinVisual").classList.add("focused"));
-pinInput.addEventListener("blur",()=>document.getElementById("pinVisual").classList.remove("focused"));
-document.getElementById("pinVisual").addEventListener("click",()=>pinInput.focus());
-syncPinVisual();
 
-if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+pinInput.addEventListener(
+  "input",
+  syncPinVisual
+);
+
+pinInput.addEventListener(
+  "focus",
+  () => $("pinVisual").classList.add("focused")
+);
+
+pinInput.addEventListener(
+  "blur",
+  () => $("pinVisual").classList.remove("focused")
+);
+
+$("pinVisual").addEventListener(
+  "click",
+  () => pinInput.focus()
+);
+
+
+/* ==================================================
+   STARTUP
+   ================================================== */
+
+function restoreSession() {
+  try {
+    const raw =
+      localStorage.getItem(SESSION_KEY);
+
+    if (!raw) return false;
+
+    session = JSON.parse(raw);
+
+    if (!session || !session.token) {
+      session = null;
+      return false;
+    }
+
+    enterHome();
+    return true;
+
+  } catch (_) {
+    session = null;
+    localStorage.removeItem(SESSION_KEY);
+    return false;
+  }
+}
+
+setLang(currentLang);
+restoreSession();
+
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js")
+    .catch(() => {});
+}
 </script>
+
 </body>
 </html>
