@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f7f7fa">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="נוכחות הגן">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<title>נוכחות הגן</title>
+<style>
+:root{--bg:#f7f7fa;--card:#fff;--ink:#171b24;--muted:#78808c;--line:#e8eaf0;--green:#21b45a;--red:#ef5350;--purple:#6756d8;--shadow:0 10px 30px rgba(24,31,45,.07)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Arial,sans-serif}
+button,input,select,textarea{font:inherit}button{border:0}
+.app{max-width:520px;min-height:100vh;margin:auto;padding:18px 16px calc(96px + env(safe-area-inset-bottom))}
+.screen{display:none}.screen.active{display:block}
+.brand{display:flex;align-items:center;justify-content:space-between;margin:4px 2px 20px}.brand-name{font-weight:800;font-size:20px}.brand-date{font-size:12px;color:var(--muted);margin-top:3px}.avatar{width:42px;height:42px;border-radius:14px;background:#fff;border:1px solid var(--line);display:grid;place-items:center}
+.card{background:var(--card);border:1px solid var(--line);border-radius:24px;box-shadow:var(--shadow)}
+.login{margin-top:9vh;padding:28px 20px;text-align:center}.logo{width:70px;height:70px;margin:0 auto 16px;border-radius:22px;background:#eeeafd;display:grid;place-items:center;font-size:34px}.login h1{margin:0;font-size:28px}.login p{margin:8px 0 22px;color:var(--muted);font-size:15px}.langs{display:flex;gap:8px;margin-bottom:12px}.langs button{flex:1;padding:11px;border-radius:13px;background:#f1f2f5;color:#5f6772}.langs button.active{background:#20242a;color:#fff}.pin{width:100%;padding:15px;border:1px solid var(--line);border-radius:15px;text-align:center;letter-spacing:7px;font-size:23px;outline:none}.main-btn{width:100%;padding:17px;border-radius:17px;background:#20242a;color:#fff;font-weight:800;margin-top:12px}.msg{min-height:22px;margin-top:10px;font-size:14px}.error{color:#d94141}.success{color:#159447}
+.hero{padding:20px;margin-bottom:12px}.hello{font-size:25px;font-weight:800;margin:0 0 4px}.sub{color:var(--muted);font-size:14px}.status{margin-top:18px;padding:17px;border-radius:20px;background:#f5f6f8;border:1px solid var(--line)}.status.work{background:#edf9f1;border-color:#cdebd8}.status-line{font-size:14px;color:#5d6570}.dot{width:9px;height:9px;border-radius:50%;display:inline-block;background:#aeb5bf;margin-left:7px}.work .dot{background:var(--green)}.time{font-size:30px;font-weight:800;margin-top:6px;direction:ltr;text-align:right}.action{width:100%;padding:18px;border-radius:18px;color:#fff;font-weight:800;font-size:19px;margin-top:12px}.start{background:var(--green)}.end{background:var(--red)}.secondary-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.tile{padding:16px 13px;text-align:right;background:#fff;border:1px solid var(--line);border-radius:18px;min-height:78px}.tile-icon{font-size:21px}.tile-title{font-weight:800;font-size:14px;margin-top:4px}.tile-sub{font-size:12px;color:var(--muted);margin-top:2px}.logout{width:100%;background:transparent;color:#89909a;padding:15px}
+.section-head{display:flex;align-items:center;gap:10px;margin:4px 0 16px}.back{width:40px;height:40px;border-radius:13px;background:#fff;border:1px solid var(--line)}.section-head h2{font-size:21px;margin:0}.summary{padding:17px;background:#f3f1ff;border:1px solid #e4e0ff;border-radius:20px;margin-bottom:12px}.summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.sum-label{font-size:12px;color:#707782}.sum-value{font-size:20px;font-weight:800;margin-top:2px}.filters{display:flex;gap:7px;overflow:auto;margin-bottom:12px;padding-bottom:2px}.filter{white-space:nowrap;padding:10px 13px;border-radius:13px;background:#eceef1;color:#5f6772}.filter.active{background:#20242a;color:#fff}.row{padding:15px;border-radius:18px;background:#fff;border:1px solid var(--line);margin-bottom:9px}.row-top{display:grid;grid-template-columns:1fr 1fr;gap:7px}.date{font-weight:800}.type{color:#5e6671;font-size:13px}.times{margin-top:8px;font-size:15px;direction:ltr;text-align:right}.total{font-weight:800}.note{margin-top:9px;padding-top:8px;border-top:1px solid #eee;color:#777f8a;font-size:12px}
+.modal-wrap{position:fixed;inset:0;background:rgba(20,25,34,.36);backdrop-filter:blur(4px);display:flex;align-items:flex-end;z-index:20}.modal{width:min(520px,100%);max-height:90vh;overflow:auto;background:#fff;border-radius:28px 28px 0 0;padding:20px 17px calc(24px + env(safe-area-inset-bottom))}.label{font-size:13px;color:var(--muted);margin:13px 2px 6px}.field{width:100%;padding:14px;border:1px solid var(--line);border-radius:14px;outline:none;background:#fff}.area{min-height:90px;resize:vertical}.cancel{width:100%;padding:14px;border-radius:14px;background:#f0f1f3;margin-top:8px}
+.bottom{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(520px,100%);padding:9px 12px calc(9px + env(safe-area-inset-bottom));background:rgba(255,255,255,.95);backdrop-filter:blur(16px);border-top:1px solid var(--line);display:none;gap:8px}.bottom.show{display:flex}.nav{flex:1;background:transparent;color:#7c8490;border-radius:14px;padding:8px 4px;font-size:12px}.nav.active{background:#efedff;color:var(--purple);font-weight:800}.nav i{display:block;font-style:normal;font-size:20px;margin-bottom:2px}
+.toast{position:fixed;z-index:50;bottom:90px;left:50%;transform:translate(-50%,20px);opacity:0;transition:.2s;width:min(430px,calc(100% - 28px));background:#20242a;color:#fff;padding:14px 16px;border-radius:16px;text-align:center;font-weight:700}.toast.show{opacity:1;transform:translate(-50%,0)}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<main class="app">
+  <section id="loginScreen" class="screen active">
+    <div class="login card">
+      <div class="logo">🌸</div>
+      <h1>נוכחות הגן</h1>
+      <p id="loginSub">הכניסי את הקוד האישי שלך</p>
+      <div class="langs"><button id="he" class="active" onclick="lang('he')">עברית 🇮🇱</button><button id="ru" onclick="lang('ru')">Русский 🇷🇺</button></div>
+      <input id="pin" class="pin" type="password" inputmode="numeric" maxlength="8" placeholder="קוד אישי">
+      <button class="main-btn" onclick="login()">כניסה</button>
+      <div id="loginMsg" class="msg"></div>
+    </div>
+  </section>
+
+  <section id="homeScreen" class="screen">
+    <header class="brand"><div><div class="brand-name">🌸 נוכחות הגן</div><div id="today" class="brand-date"></div></div><div class="avatar">👤</div></header>
+    <div class="hero card">
+      <h2 id="hello" class="hello"></h2><div id="homeSub" class="sub"></div>
+      <div id="status" class="status"><div class="status-line"><span class="dot"></span><span id="statusText">טוען...</span></div><div id="time" class="time"></div></div>
+      <button id="startBtn" class="action start" onclick="startWork()">🟢 התחל עבודה</button>
+      <button id="endBtn" class="action end hidden" onclick="endWork()">🔴 סיים עבודה</button>
+    </div>
+    <div class="secondary-grid">
+      <button class="tile" onclick="openManual()"><div class="tile-icon">✏️</div><div class="tile-title">תיקון שעות</div><div class="tile-sub">דיווח ידני</div></button>
+      <button class="tile" onclick="openAbsence()"><div class="tile-icon">📅</div><div class="tile-title">חופשה / היעדרות</div><div class="tile-sub">דיווח חדש</div></button>
+    </div>
+    <button class="logout" onclick="logout()">התנתקות</button>
+  </section>
+
+  <section id="historyScreen" class="screen">
+    <div class="section-head"><button class="back" onclick="show('homeScreen')">→</button><h2>📋 ההיסטוריה שלי</h2></div>
+    <div id="summary" class="summary"></div>
+    <div class="filters"><button class="filter active" data-f="all">הכל</button><button class="filter" data-f="work">🕐 עבודה</button><button class="filter" data-f="sick">🤒 מחלה</button><button class="filter" data-f="vacation">🏖️ חופשה</button><button class="filter" data-f="absence">🚫 היעדרות</button></div>
+    <div id="history"></div>
+  </section>
+</main>
+
+<nav id="nav" class="bottom">
+  <button class="nav active" onclick="show('homeScreen')"><i>⌂</i>בית</button>
+  <button class="nav" onclick="showHistory()"><i>▣</i>היסטוריה</button>
+  <button class="nav" onclick="openAbsence()"><i>＋</i>דיווח</button>
+</nav>
+
+<div id="modal" class="modal-wrap hidden"></div><div id="toast" class="toast"></div>
+
+<script>
+const API_URL="PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
+let session=JSON.parse(localStorage.getItem("gan_session")||"null"), currentLang=localStorage.getItem("gan_lang")||"he", allHistory=[];
+
+function lang(x){currentLang=x;localStorage.setItem("gan_lang",x);document.documentElement.lang=x;document.documentElement.dir="rtl";document.getElementById("he").classList.toggle("active",x==="he");document.getElementById("ru").classList.toggle("active",x==="ru");}
+function show(id){document.querySelectorAll(".screen").forEach(x=>x.classList.remove("active"));document.getElementById(id).classList.add("active");document.querySelectorAll(".nav").forEach((x,i)=>x.classList.toggle("active",(id==="homeScreen"&&i===0)||(id==="historyScreen"&&i===1)));window.scrollTo(0,0)}
+function toast(t){let x=document.getElementById("toast");x.textContent=t;x.classList.add("show");clearTimeout(window.__t);window.__t=setTimeout(()=>x.classList.remove("show"),2500)}
+function today(){document.getElementById("today").textContent=new Intl.DateTimeFormat(currentLang==="ru"?"ru-RU":"he-IL",{weekday:"long",day:"numeric",month:"long",year:"numeric"}).format(new Date())}
+function jsonp(action,params={}){
+  return new Promise((resolve,reject)=>{
+    if(API_URL.includes("PASTE_")) return reject(new Error("יש להגדיר את כתובת ה-Apps Script"));
+    const cb="cb_"+Date.now()+"_"+Math.random().toString(36).slice(2), s=document.createElement("script");
+    const q=new URLSearchParams({action,callback:cb,...params}); s.src=API_URL+"?"+q.toString();
+    window[cb]=data=>{delete window[cb];s.remove();resolve(data)};s.onerror=()=>{delete window[cb];s.remove();reject(new Error("לא ניתן להתחבר לשרת"))};
+    document.body.appendChild(s);
+    setTimeout(()=>{if(window[cb]){delete window[cb];s.remove();reject(new Error("החיבור ארך זמן רב מדי"))}},15000);
+  });
+}
+async function login(){
+  const pin=document.getElementById("pin").value.trim(), msg=document.getElementById("loginMsg");msg.textContent="";
+  try{const r=await jsonp("login",{pin});if(!r.success){msg.textContent=r.message||"קוד אישי שגוי";msg.className="msg error";return}
+    session=r.session;localStorage.setItem("gan_session",JSON.stringify(session));enterHome();
+  }catch(e){msg.textContent=e.message;msg.className="msg error"}
+}
+function enterHome(){document.getElementById("hello").textContent=`שלום, ${session.name} 👋`;document.getElementById("homeSub").textContent="הנוכחות שלך להיום";document.getElementById("nav").classList.add("show");today();show("homeScreen");loadStatus()}
+async function loadStatus(){try{const r=await jsonp("status",{token:session.token});if(!r.success){logout();return}document.getElementById("statusText").textContent=r.started?"את כרגע בעבודה":r.ended?"המשמרת האחרונה הסתיימה":"עדיין לא התחלת לעבוד";document.getElementById("time").textContent=r.started?(r.startTime||""):"";document.getElementById("status").classList.toggle("work",!!r.started);document.getElementById("startBtn").classList.toggle("hidden",!!r.started);document.getElementById("endBtn").classList.toggle("hidden",!r.started)}catch(e){toast(e.message)}}
+async function startWork(){try{const r=await jsonp("start",{token:session.token});if(!r.success){toast(r.message);return}toast("העבודה התחילה ✅");loadStatus()}catch(e){toast(e.message)}}
+async function endWork(){try{const r=await jsonp("end",{token:session.token});if(!r.success){toast(r.message);return}toast("העבודה הסתיימה ✅");loadStatus()}catch(e){toast(e.message)}}
+function logout(){localStorage.removeItem("gan_session");session=null;document.getElementById("nav").classList.remove("show");show("loginScreen")}
+function openModal(inner){document.getElementById("modal").innerHTML=`<div class="modal">${inner}</div>`;document.getElementById("modal").classList.remove("hidden")}
+function closeModal(){document.getElementById("modal").classList.add("hidden")}
+function openManual(){openModal(`<div class="section-head"><button class="back" onclick="closeModal()">→</button><h2>✏️ תיקון שעות</h2></div><div class="label">תאריך</div><input id="md" class="field" type="date"><div class="label">שעת התחלה</div><input id="ms" class="field" type="time"><div class="label">שעת סיום</div><input id="me" class="field" type="time"><button class="main-btn" onclick="saveManual()">שמור שעות</button><button class="cancel" onclick="closeModal()">ביטול</button>`)}
+async function saveManual(){try{const r=await jsonp("manual",{token:session.token,date:md.value,start:ms.value,end:me.value});if(!r.success){toast(r.message);return}closeModal();toast("השעות נשמרו ✅")}catch(e){toast(e.message)}}
+function openAbsence(){openModal(`<div class="section-head"><button class="back" onclick="closeModal()">→</button><h2>📅 חופשה / היעדרות</h2></div><div class="label">סוג דיווח</div><select id="at" class="field"><option value="חופשה">🏖️ חופשה</option><option value="מחלה">🤒 מחלה</option><option value="היעדרות">🚫 היעדרות</option></select><div class="label">מתאריך</div><input id="af" class="field" type="date"><div class="label">עד תאריך</div><input id="ao" class="field" type="date"><div class="label">הערה</div><textarea id="an" class="field area" placeholder="לא חובה"></textarea><button class="main-btn" onclick="saveAbs()">שמור דיווח</button><button class="cancel" onclick="closeModal()">ביטול</button>`)}
+async function saveAbs(){try{const r=await jsonp("absence",{token:session.token,type:at.value,from:af.value,to:ao.value,note:an.value});if(!r.success){toast(r.message);return}closeModal();toast("הדיווח נשמר ✅")}catch(e){toast(e.message)}}
+async function showHistory(){show("historyScreen");document.getElementById("history").textContent="טוען...";try{const r=await jsonp("history",{token:session.token});if(!r.success){toast(r.message);return}allHistory=r.history||[];renderHistory("all")}catch(e){toast(e.message)}}
+document.querySelectorAll(".filter").forEach(b=>b.onclick=()=>{document.querySelectorAll(".filter").forEach(x=>x.classList.remove("active"));b.classList.add("active");renderHistory(b.dataset.f)})
+function renderHistory(filter){let h=allHistory.filter(x=>filter==="all"||(filter==="work"&&x.source==="attendance")||(filter==="sick"&&x.absenceType==="מחלה")||(filter==="vacation"&&x.absenceType==="חופשה")||(filter==="absence"&&x.absenceType==="היעדרות"));let mins=0,w=0,s=0,v=0,a=0;allHistory.forEach(x=>{if(x.source==="attendance"){w++;if(x.start&&x.end){let [sh,sm]=x.start.split(":").map(Number),[eh,em]=x.end.split(":").map(Number);mins+=Math.max(0,eh*60+em-sh*60-sm)}}else if(x.absenceType==="מחלה")s++;else if(x.absenceType==="חופשה")v++;else a++});document.getElementById("summary").innerHTML=`<div class="summary-grid"><div><div class="sum-label">שעות עבודה</div><div class="sum-value">${String(Math.floor(mins/60)).padStart(2,"0")}:${String(mins%60).padStart(2,"0")}</div></div><div><div class="sum-label">דיווחי עבודה</div><div class="sum-value">${w}</div></div><div><div class="sum-label">חופשה</div><div class="sum-value">${v}</div></div><div><div class="sum-label">מחלה / היעדרות</div><div class="sum-value">${s+a}</div></div></div>`;document.getElementById("history").innerHTML=h.length?h.map(x=>x.source==="attendance"?`<article class="row"><div class="row-top"><div class="date">${x.date.split("-").reverse().join("/")}</div><div class="type">🕐 עבודה</div></div><div class="times">${x.start||"--:--"} → ${x.end||"--:--"} <span class="total">${x.total||""}</span></div>${x.note?`<div class="note">💬 ${escapeHtml(x.note)}</div>`:""}</article>`:`<article class="row"><div class="row-top"><div class="date">${x.absenceFrom?x.absenceFrom.split("-").reverse().join("/"):x.date}</div><div class="type">${x.absenceType==="מחלה"?"🤒":x.absenceType==="חופשה"?"🏖️":"🚫"} ${x.absenceType}</div></div><div class="times">${x.absenceFrom&&x.absenceTo?x.absenceFrom.split("-").reverse().join("/")+" → "+x.absenceTo.split("-").reverse().join("/"):x.date}</div>${x.note?`<div class="note">💬 ${escapeHtml(x.note)}</div>`:""}</article>`).join(""):`<div style="text-align:center;color:var(--muted);padding:40px">אין דיווחים להצגה</div>`}
+function escapeHtml(x){return String(x||"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+if(session){enterHome()}else{lang(currentLang)}
+if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+</script>
+</body>
+</html>
