@@ -94,68 +94,24 @@ function today(){document.getElementById("today").textContent=new Intl.DateTimeF
 function jsonp(action,params={}){
   return new Promise((resolve,reject)=>{
     if(API_URL.includes("PASTE_")) return reject(new Error("יש להגדיר את כתובת ה-Apps Script"));
-
-    const cb="cb_"+Date.now()+"_"+Math.random().toString(36).slice(2);
-    const s=document.createElement("script");
-    const q=new URLSearchParams({action,callback:cb,_ts:String(Date.now()),...params});
-
-    let finished=false;
-    const cleanup=()=>{
-      if(finished)return;
-      finished=true;
-      delete window[cb];
-      s.remove();
-    };
-
-    window[cb]=data=>{cleanup();resolve(data)};
-    s.onerror=()=>{cleanup();reject(new Error("לא ניתן להתחבר לשרת"))};
-
-    s.src=API_URL+"?"+q.toString();
+    const cb="cb_"+Date.now()+"_"+Math.random().toString(36).slice(2), s=document.createElement("script");
+    const q=new URLSearchParams({action,callback:cb,...params}); s.src=API_URL+"?"+q.toString();
+    window[cb]=data=>{delete window[cb];s.remove();resolve(data)};s.onerror=()=>{delete window[cb];s.remove();reject(new Error("לא ניתן להתחבר לשרת"))};
     document.body.appendChild(s);
-
-    setTimeout(()=>{
-      if(!finished){
-        cleanup();
-        reject(new Error("החיבור ארך זמן רב מדי"));
-      }
-    },20000);
+    setTimeout(()=>{if(window[cb]){delete window[cb];s.remove();reject(new Error("החיבור ארך זמן רב מדי"))}},15000);
   });
 }
 async function login(){
-  const pin=document.getElementById("pin").value.trim();
-  const msg=document.getElementById("loginMsg");
-  msg.textContent="מתחברת...";
-  msg.className="msg";
-
-  if(!pin){
-    msg.textContent="יש להזין קוד אישי";
-    msg.className="msg error";
-    return;
-  }
-
-  try{
-    const r=await jsonp("login",{pin});
-
-    if(!r || !r.success || !r.session){
-      msg.textContent=(r&&r.message)||"קוד אישי שגוי";
-      msg.className="msg error";
-      return;
-    }
-
-    session=r.session;
-    localStorage.setItem("gan_session",JSON.stringify(session));
-    msg.textContent="";
-    enterHome();
-
-  }catch(e){
-    msg.textContent=e.message||"לא ניתן להתחבר לשרת";
-    msg.className="msg error";
-  }
+  const pin=document.getElementById("pin").value.trim(), msg=document.getElementById("loginMsg");msg.textContent="";
+  try{const r=await jsonp("login",{pin});if(!r.success){msg.textContent=r.message||"קוד אישי שגוי";msg.className="msg error";return}
+    session=r.session;localStorage.setItem("gan_session",JSON.stringify(session));enterHome(r.todayStatus);
+  }catch(e){msg.textContent=e.message;msg.className="msg error"}
 }
-function enterHome(){document.getElementById("hello").textContent=`שלום, ${session.name} 👋`;document.getElementById("homeSub").textContent="הנוכחות שלך להיום";document.getElementById("nav").classList.add("show");today();show("homeScreen");loadStatus()}
-async function loadStatus(){try{const r=await jsonp("status",{token:session.token});if(!r.success){logout();return}document.getElementById("statusText").textContent=r.started?"את כרגע בעבודה":r.ended?"המשמרת האחרונה הסתיימה":"עדיין לא התחלת לעבוד";document.getElementById("time").textContent=r.started?(r.startTime||""):"";document.getElementById("status").classList.toggle("work",!!r.started);document.getElementById("startBtn").classList.toggle("hidden",!!r.started);document.getElementById("endBtn").classList.toggle("hidden",!r.started)}catch(e){toast(e.message)}}
-async function startWork(){try{const r=await jsonp("start",{token:session.token});if(!r.success){toast(r.message);return}toast("העבודה התחילה ✅");loadStatus()}catch(e){toast(e.message)}}
-async function endWork(){try{const r=await jsonp("end",{token:session.token});if(!r.success){toast(r.message);return}toast("העבודה הסתיימה ✅");loadStatus()}catch(e){toast(e.message)}}
+function applyStatus(r){if(!r)return;document.getElementById("statusText").textContent=r.started?"את כרגע בעבודה":r.ended?"המשמרת האחרונה הסתיימה":"עדיין לא התחלת לעבוד";document.getElementById("time").textContent=r.started?(r.startTime||""):"";document.getElementById("status").classList.toggle("work",!!r.started);document.getElementById("startBtn").classList.toggle("hidden",!!r.started);document.getElementById("endBtn").classList.toggle("hidden",!r.started)}
+function enterHome(todayStatus){document.getElementById("hello").textContent=`שלום, ${session.name} 👋`;document.getElementById("homeSub").textContent="הנוכחות שלך להיום";document.getElementById("nav").classList.add("show");today();show("homeScreen");if(todayStatus)applyStatus(todayStatus)}
+async function loadStatus(){try{const r=await jsonp("status",{token:session.token});if(!r.success){logout();return}applyStatus(r)}catch(e){toast(e.message)}}
+async function startWork(){try{const r=await jsonp("start",{token:session.token});if(!r.success){toast(r.message);return}applyStatus({started:true,ended:false,startTime:r.time||""});toast("העבודה התחילה ✅")}catch(e){toast(e.message)}}
+async function endWork(){try{const r=await jsonp("end",{token:session.token});if(!r.success){toast(r.message);return}applyStatus({started:false,ended:true,startTime:null});toast("העבודה הסתיימה ✅")}catch(e){toast(e.message)}}
 function logout(){localStorage.removeItem("gan_session");session=null;document.getElementById("nav").classList.remove("show");show("loginScreen")}
 function openModal(inner){document.getElementById("modal").innerHTML=`<div class="modal">${inner}</div>`;document.getElementById("modal").classList.remove("hidden")}
 function closeModal(){document.getElementById("modal").classList.add("hidden")}
