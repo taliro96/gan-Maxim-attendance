@@ -1,7 +1,6 @@
-const CACHE = "gan-attendance-v6";
+const CACHE = "gan-attendance-v7";
 
 const ASSETS = [
-  "./style.css",
   "./manifest.webmanifest",
   "./icon-192.png",
   "./icon-512.png",
@@ -38,20 +37,21 @@ self.addEventListener("fetch", event => {
     return;
   }
 
-  // HTML תמיד מהרשת — כדי שהאפליקציה תתעדכן
+  // HTML ו-CSS תמיד מהרשת
   if (
     event.request.mode === "navigate" ||
-    url.pathname.endsWith("/index.html")
+    url.pathname.endsWith(".html") ||
+    url.pathname.endsWith(".css")
   ) {
     event.respondWith(
       fetch(event.request, { cache: "no-store" })
-        .catch(() => caches.match("./index.html"))
+        .catch(() => caches.match(event.request))
     );
 
     return;
   }
 
-  // שאר הקבצים: cache-first
+  // תמונות ואייקונים — מהקאש
   event.respondWith(
     caches.match(event.request).then(cached => {
       return cached || fetch(event.request);
