@@ -74,7 +74,7 @@ button,input,select,textarea{font:inherit}button{border:0}
 <div id="modal" class="modal-wrap hidden"></div><div id="toast" class="toast"></div>
 
 <script>
-const API_URL="PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
+const API_URL="https://script.google.com/macros/s/AKfycbxxw9oLXorL9GT4OqK-1gwedpUDzsY6kOx3kOZD1JSyccynAfcYWk2v4jmrUmYhu_xL/exec";
 let session=JSON.parse(localStorage.getItem("gan_session")||"null"), currentLang=localStorage.getItem("gan_lang")||"he", allHistory=[];
 
 function lang(x){currentLang=x;localStorage.setItem("gan_lang",x);document.documentElement.lang=x;document.documentElement.dir="rtl";document.getElementById("he").classList.toggle("active",x==="he");document.getElementById("ru").classList.toggle("active",x==="ru");}
