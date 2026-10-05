@@ -1,11 +1,14 @@
-const CACHE='gan-attendance-v2';
+const CACHE='gan-attendance-v3';
 
 const ASSETS=[
   './',
   './index.html',
+  './style.css',
   './manifest.webmanifest',
   './icon-192.png',
-  './icon-512.png'
+  './icon-512.png',
+  './logo.png',
+  './app-background.png'
 ];
 
 self.addEventListener('install', event=>{
@@ -19,9 +22,7 @@ self.addEventListener('activate', event=>{
   event.waitUntil(
     caches.keys().then(keys=>
       Promise.all(
-        keys
-          .filter(key=>key!==CACHE)
-          .map(key=>caches.delete(key))
+        keys.filter(key=>key!==CACHE).map(key=>caches.delete(key))
       )
     )
   );
