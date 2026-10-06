@@ -70,7 +70,7 @@ export default function Home({
 
   return (
     <main className="screen app-screen">
-      <BrandHeader onBack={() => {}} onMenu={onMenu} />
+      <BrandHeader onBack={null} onMenu={onMenu} hideBack />
 
       <section className="home-content">
         <h1 className="greeting">

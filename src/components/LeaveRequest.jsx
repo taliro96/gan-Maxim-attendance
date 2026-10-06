@@ -6,16 +6,46 @@ export default function LeaveRequest({ session, onBack, onMenu, onSave }) {
   const [date, setDate] = useState('')
   const [note, setNote] = useState('')
   const [sent, setSent] = useState(false)
+  const [saving, setSaving] = useState(false)
 
   async function submit(event) {
     event.preventDefault()
-    await onSave({
-      type: kind,
-      from: date,
-      to: date,
-      note,
-    })
-    setSent(true)
+    if (saving) return
+
+    setSaving(true)
+
+    try {
+      await onSave({
+        type: kind,
+        from: date,
+        to: date,
+        note,
+      })
+
+      setSent(true)
+
+      setTimeout(() => {
+        onBack()
+      }, 1200)
+    } catch {
+      setSaving(false)
+    }
+  }
+
+  if (sent) {
+    return (
+      <main className="screen app-screen">
+        <BrandHeader onBack={onBack} onMenu={onMenu} />
+
+        <section className="page-content leave-page">
+          <div className="success-message">
+            <div className="success-icon">✓</div>
+            <h1 className="page-title">ההיעדרות נשמרה בהצלחה</h1>
+            <p>חוזרת למסך הראשי...</p>
+          </div>
+        </section>
+      </main>
+    )
   }
 
   return (
@@ -55,8 +85,8 @@ export default function LeaveRequest({ session, onBack, onMenu, onSave }) {
             onChange={(event) => setNote(event.target.value)}
           />
 
-          <button className="pink-button" type="submit">
-            {sent ? 'ההיעדרות נשמרה ✓' : 'שמירת היעדרות'}
+          <button className="pink-button" type="submit" disabled={saving}>
+            {saving ? 'שומרת...' : 'שמירת היעדרות'}
           </button>
         </form>
       </section>
