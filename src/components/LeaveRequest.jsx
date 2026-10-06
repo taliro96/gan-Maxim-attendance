@@ -1,11 +1,10 @@
 import { useState } from 'react'
 import BrandHeader from './BrandHeader'
 
-export default function LeaveRequest({ session, onBack, onMenu, onSave }) {
+export default function LeaveRequest({ session, onBack, onMenu, onSave, onSaved }) {
   const [kind, setKind] = useState('חופשה')
   const [date, setDate] = useState('')
   const [note, setNote] = useState('')
-  const [sent, setSent] = useState(false)
   const [saving, setSaving] = useState(false)
 
   async function submit(event) {
@@ -22,30 +21,10 @@ export default function LeaveRequest({ session, onBack, onMenu, onSave }) {
         note,
       })
 
-      setSent(true)
-
-      setTimeout(() => {
-        onBack()
-      }, 1200)
+      onSaved()
     } catch {
       setSaving(false)
     }
-  }
-
-  if (sent) {
-    return (
-      <main className="screen app-screen">
-        <BrandHeader onBack={onBack} onMenu={onMenu} />
-
-        <section className="page-content leave-page">
-          <div className="success-message">
-            <div className="success-icon">✓</div>
-            <h1 className="page-title">ההיעדרות נשמרה בהצלחה</h1>
-            <p>חוזרת למסך הראשי...</p>
-          </div>
-        </section>
-      </main>
-    )
   }
 
   return (

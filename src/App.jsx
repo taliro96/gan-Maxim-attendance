@@ -43,15 +43,19 @@ export default function App() {
   const [statusLoading, setStatusLoading] = useState(Boolean(saved && !cachedStatus))
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
   const statusRequestRef = useRef(0)
 
   useEffect(() => {
-    if (session) {
-      refreshStatus(session)
-    } else {
-      setStatusLoading(false)
-    }
+    if (session) refreshStatus(session)
+    else setStatusLoading(false)
   }, [session])
+
+  useEffect(() => {
+    if (!successMessage) return undefined
+    const timer = setTimeout(() => setSuccessMessage(''), 2200)
+    return () => clearTimeout(timer)
+  }, [successMessage])
 
   async function refreshStatus(current = session) {
     if (!current?.employeeId) {
@@ -61,9 +65,7 @@ export default function App() {
 
     const requestId = ++statusRequestRef.current
 
-    if (!status) {
-      setStatusLoading(true)
-    }
+    if (!status) setStatusLoading(true)
 
     const maxAttempts = 3
 
@@ -84,19 +86,14 @@ export default function App() {
         return
       } catch {
         if (requestId !== statusRequestRef.current) return
-
         if (attempt < maxAttempts) {
-          await new Promise(resolve =>
-            setTimeout(resolve, attempt * 1200),
-          )
+          await new Promise(resolve => setTimeout(resolve, attempt * 1200))
         }
       }
     }
 
     if (requestId === statusRequestRef.current) {
-      if (!status) {
-        setError('לא ניתן לטעון את מצב הנוכחות')
-      }
+      if (!status) setError('לא ניתן לטעון את מצב הנוכחות')
       setStatusLoading(false)
     }
   }
@@ -170,9 +167,7 @@ export default function App() {
           : 'לא ניתן להתחיל את העבודה',
       )
 
-      if (requestError.message === 'ALREADY_STARTED') {
-        refreshStatus(session)
-      }
+      if (requestError.message === 'ALREADY_STARTED') refreshStatus(session)
     } finally {
       setLoading(false)
     }
@@ -215,11 +210,17 @@ export default function App() {
     })
   }
 
+  function handleAbsenceSaved() {
+    setScreen('home')
+    setSuccessMessage('ההיעדרות נשמרה בהצלחה ✓')
+  }
+
   function logout() {
     clearSession()
     setSession(null)
     setStatus(null)
     setStatusLoading(false)
+    setSuccessMessage('')
     setScreen('welcome')
   }
 
@@ -228,13 +229,7 @@ export default function App() {
   }
 
   if (screen === 'welcome' || !session) {
-    return (
-      <Welcome
-        onLogin={login}
-        loading={loading}
-        error={error}
-      />
-    )
+    return <Welcome onLogin={login} loading={loading} error={error} />
   }
 
   if (screen === 'home') {
@@ -245,6 +240,7 @@ export default function App() {
         statusLoading={statusLoading}
         loading={loading}
         error={error}
+        successMessage={successMessage}
         onStart={startWork}
         onEnd={endWork}
         onHistory={() => setScreen('history')}
@@ -302,6 +298,7 @@ export default function App() {
         onBack={() => setScreen('home')}
         onMenu={openMenu}
         onSave={saveAbsence}
+        onSaved={handleAbsenceSaved}
       />
     )
   }
