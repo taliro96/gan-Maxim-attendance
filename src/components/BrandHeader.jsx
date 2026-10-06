@@ -1,4 +1,4 @@
-import { ArrowBack, Person } from './Icons'
+import { ArrowBack } from './Icons'
 
 export default function BrandHeader({ onBack, onMenu }) {
   return (
@@ -10,7 +10,11 @@ export default function BrandHeader({ onBack, onMenu }) {
       <img className="header-logo" src="./logo.png" alt="גן מקסים" />
 
       <button className="header-icon-button" onClick={onMenu} aria-label="פרופיל">
-        <Person />
+        <img
+          src="./profile-icon.png"
+          alt="פרופיל"
+          style={{ width: '30px', height: '30px', objectFit: 'contain' }}
+        />
       </button>
     </header>
   )
