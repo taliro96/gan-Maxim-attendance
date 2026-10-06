@@ -67,10 +67,7 @@ export default function Home({
 
   void tick
 
-  const elapsed = working
-    ? elapsedFrom(status.start)
-    : '00:00'
-
+  const elapsed = working ? elapsedFrom(status.start) : '00:00'
   const checkingStatus = Boolean(statusLoading)
 
   return (
@@ -86,11 +83,7 @@ export default function Home({
           {formatDate()}
         </div>
 
-        {checkingStatus ? (
-          <div className="home-time">
-            בודקת מצב נוכחות...
-          </div>
-        ) : working ? (
+        {working ? (
           <div className="work-summary">
             <div className="work-summary-item">
               <span>שעת התחלה</span>
@@ -108,18 +101,15 @@ export default function Home({
           </div>
         )}
 
-        {error && (
+        {error && !checkingStatus && (
           <div className="form-error">
             {error}
           </div>
         )}
 
         {checkingStatus ? (
-          <button
-            className="start-work-button"
-            disabled
-          >
-            <span>טוענת מצב נוכחות...</span>
+          <button className="start-work-button" disabled>
+            <span>בודקת מצב נוכחות...</span>
           </button>
         ) : working ? (
           <button
@@ -128,11 +118,7 @@ export default function Home({
             disabled={loading}
           >
             <span className="circle-icon stop">■</span>
-            <span>
-              {loading
-                ? 'מסיים...'
-                : 'סיים עבודה'}
-            </span>
+            <span>{loading ? 'מסיים...' : 'סיים עבודה'}</span>
           </button>
         ) : (
           <button
@@ -141,43 +127,27 @@ export default function Home({
             disabled={loading || Boolean(status?.end)}
           >
             <Play />
-            <span>
-              {loading
-                ? 'שומר...'
-                : 'התחל עבודה'}
-            </span>
+            <span>{loading ? 'שומר...' : 'התחל עבודה'}</span>
           </button>
         )}
 
         <div className="feature-grid">
-          <button
-            className="feature-card"
-            onClick={onHistory}
-          >
+          <button className="feature-card" onClick={onHistory}>
             <Clock />
             <strong>היסטוריה שלי</strong>
           </button>
 
-          <button
-            className="feature-card"
-            onClick={onBreak}
-          >
+          <button className="feature-card" onClick={onBreak}>
             <Cup />
             <strong>הפסקה</strong>
           </button>
 
-          <button
-            className="feature-card"
-            onClick={onAbsence}
-          >
+          <button className="feature-card" onClick={onAbsence}>
             <Calendar />
             <strong>בקשת חופש</strong>
           </button>
 
-          <button
-            className="feature-card"
-            onClick={onProfile}
-          >
+          <button className="feature-card" onClick={onProfile}>
             <FileIcon />
             <strong>הפרופיל שלי</strong>
           </button>

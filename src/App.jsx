@@ -12,12 +12,35 @@ import LeaveRequest from './components/LeaveRequest'
 import Profile from './components/Profile'
 import ThankYou from './components/ThankYou'
 
+const STATUS_CACHE_KEY = 'gan_today_status'
+
+function getCachedStatus(employeeId) {
+  try {
+    const cached = JSON.parse(localStorage.getItem(STATUS_CACHE_KEY) || 'null')
+    if (cached?.employeeId === employeeId) return cached.status || null
+  } catch {}
+  return null
+}
+
+function cacheStatus(employeeId, status) {
+  try {
+    localStorage.setItem(
+      STATUS_CACHE_KEY,
+      JSON.stringify({ employeeId, status }),
+    )
+  } catch {}
+}
+
 export default function App() {
   const saved = getSession()
+  const cachedStatus = saved?.employeeId
+    ? getCachedStatus(saved.employeeId)
+    : null
+
   const [session, setSession] = useState(saved)
   const [screen, setScreen] = useState(saved ? 'home' : 'welcome')
-  const [status, setStatus] = useState(null)
-  const [statusLoading, setStatusLoading] = useState(Boolean(saved))
+  const [status, setStatus] = useState(cachedStatus)
+  const [statusLoading, setStatusLoading] = useState(Boolean(saved && !cachedStatus))
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const statusRequestRef = useRef(0)
@@ -37,8 +60,12 @@ export default function App() {
     }
 
     const requestId = ++statusRequestRef.current
-    setStatusLoading(true)
-    setError('')
+
+    // If we already have a cached status, keep showing it while
+    // the fresh server check happens in the background.
+    if (!status) {
+      setStatusLoading(true)
+    }
 
     try {
       const result = await api('getTodayStatus', {
@@ -48,12 +75,17 @@ export default function App() {
 
       if (requestId !== statusRequestRef.current) return
 
-      setStatus(result.status || null)
+      const nextStatus = result.status || null
+      setStatus(nextStatus)
+      cacheStatus(current.employeeId, nextStatus)
       setError('')
     } catch {
       if (requestId !== statusRequestRef.current) return
 
-      setError('לא ניתן לטעון את מצב הנוכחות')
+      // Do not erase a valid cached status because of a slow/failed refresh.
+      if (!status) {
+        setError('לא ניתן לטעון את מצב הנוכחות')
+      }
     } finally {
       if (requestId === statusRequestRef.current) {
         setStatusLoading(false)
@@ -77,7 +109,10 @@ export default function App() {
 
       saveSession(next)
       setSession(next)
-      setStatus(result.status || null)
+
+      const nextStatus = result.status || null
+      setStatus(nextStatus)
+      cacheStatus(next.employeeId, nextStatus)
       setStatusLoading(false)
       setScreen('home')
     } catch (requestError) {
@@ -95,9 +130,7 @@ export default function App() {
   async function startWork() {
     if (!session) return
 
-    // Invalidate any older status request immediately.
     statusRequestRef.current += 1
-
     setLoading(true)
     setStatusLoading(false)
     setError('')
@@ -113,12 +146,14 @@ export default function App() {
         minute: '2-digit',
       }).format(new Date())
 
-      setStatus({
+      const nextStatus = {
         ...(result.status || {}),
         start: result.status?.start || fallbackStart,
         end: result.status?.end || '',
-      })
+      }
 
+      setStatus(nextStatus)
+      cacheStatus(session.employeeId, nextStatus)
       setScreen('home')
     } catch (requestError) {
       setError(
@@ -147,7 +182,9 @@ export default function App() {
         employeeId: session.employeeId,
       })
 
-      setStatus(result.status || null)
+      const nextStatus = result.status || null
+      setStatus(nextStatus)
+      cacheStatus(session.employeeId, nextStatus)
       setScreen('thankYou')
     } catch (requestError) {
       setError(
