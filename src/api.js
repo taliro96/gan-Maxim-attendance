@@ -1,5 +1,5 @@
 const API_URL =
-  'https://script.google.com/macros/s/AKfycbyVTnp4s8jZL659otT6kp9BuOT5qIVLjyOf9SV5BgHXGWAQ5gchnPoH4wc9zgffTB0B/exec'
+  'https://script.google.com/macros/s/AKfycbxKZdDeYw-TjNvy1Lm10qN_QLvDQ1j4WD9jilffU4UWiSiVJguA3mfdPIENBAOVBKpt/exec'
 
 export function api(action, params = {}) {
   return new Promise((resolve, reject) => {
