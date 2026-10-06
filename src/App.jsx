@@ -80,13 +80,26 @@ export default function App() {
         employeeId: session.employeeId,
       })
 
-      setStatus(result.status || null)
+      // The server has already saved the row successfully.
+      // Update the screen immediately from the current local time,
+      // instead of depending on the returned status object.
+      const now = new Date()
+      const start = new Intl.DateTimeFormat('he-IL', {
+        hour: '2-digit',
+        minute: '2-digit',
+      }).format(now)
 
-      // IMPORTANT:
-      // Stay on the home screen. The home screen itself
-      // changes to "סיים עבודה" and shows the start time
-      // and elapsed work time.
+      setStatus({
+        ...(result.status || {}),
+        start,
+        end: '',
+      })
+
+      // Stay on the home screen. The home screen itself changes.
       setScreen('home')
+
+      // Refresh from the server in the background.
+      refreshStatus(session)
     } catch (requestError) {
       setError(
         requestError.message === 'ALREADY_STARTED'
