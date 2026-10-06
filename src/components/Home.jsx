@@ -1,117 +1,67 @@
+import BrandHeader from './BrandHeader'
+import { Calendar, Clock, Cup, FileIcon, Play } from './Icons'
+
+function formatDate() {
+  return new Intl.DateTimeFormat('he-IL', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(new Date())
+}
+
+function currentTime() {
+  return new Intl.DateTimeFormat('he-IL', {
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date())
+}
+
 export default function Home({
   session,
   status,
-  loading,
-  error,
   onStart,
-  onEnd,
-  onManual,
-  onAbsence,
   onHistory,
-  onLogout,
+  onAbsence,
+  onProfile,
+  onBreak,
+  onMenu,
 }) {
   const working = Boolean(status?.start && !status?.end)
 
   return (
-    <main className="app-shell">
-      <header className="topbar">
-        <img
-          className="small-logo"
-          src="./logo.png"
-          alt=""
-        />
+    <main className="screen app-screen">
+      <BrandHeader onBack={() => {}} onMenu={onMenu} />
 
-        <div>
-          <div className="brand">גן מקסים</div>
-          <div className="welcome">
-            שלום, {session.name}
-          </div>
-        </div>
+      <section className="home-content">
+        <h1 className="greeting">שלום, {session.name} 👋</h1>
+        <div className="date-text">{formatDate()}</div>
+        <div className="home-time">{status?.start || currentTime()}</div>
 
-        <button
-          className="menu-button"
-          onClick={onLogout}
-        >
-          יציאה
+        <button className="start-work-button" onClick={onStart} disabled={working}>
+          <Play />
+          <span>{working ? 'עבודה בתהליך' : 'התחל עבודה'}</span>
         </button>
-      </header>
 
-      <section className="content">
-        <div className="status-card">
-          <div>
-            <div className="section-label">היום</div>
-
-            <h2>
-              {working
-                ? 'את בעבודה'
-                : status?.end
-                  ? 'יום העבודה הסתיים'
-                  : 'טרם התחלת עבודה'}
-            </h2>
-          </div>
-
-          <div
-            className={`status-dot ${
-              working ? 'active' : ''
-            }`}
-          />
-        </div>
-
-        {error && <div className="error">{error}</div>}
-
-        <div className="time-card">
-          <div>
-            <span>כניסה</span>
-            <strong>{status?.start || '—'}</strong>
-          </div>
-
-          <div>
-            <span>יציאה</span>
-            <strong>{status?.end || '—'}</strong>
-          </div>
-
-          <div>
-            <span>סה״כ</span>
-            <strong>{status?.total || '—'}</strong>
-          </div>
-        </div>
-
-        <div className="main-actions">
-          {!working && !status?.end && (
-            <button
-              className="primary-button big"
-              disabled={loading}
-              onClick={onStart}
-            >
-              התחלת עבודה
-            </button>
-          )}
-
-          {working && (
-            <button
-              className="secondary-button big"
-              disabled={loading}
-              onClick={onEnd}
-            >
-              סיום עבודה
-            </button>
-          )}
-        </div>
-
-        <div className="quick-grid">
-          <button onClick={onManual}>
-            <span>🕒</span>
-            <b>דיווח שעות ידני</b>
+        <div className="feature-grid">
+          <button className="feature-card" onClick={onHistory}>
+            <Clock />
+            <strong>היסטוריה שלי</strong>
           </button>
 
-          <button onClick={onAbsence}>
-            <span>📅</span>
-            <b>דיווח היעדרות</b>
+          <button className="feature-card" onClick={onBreak}>
+            <Cup />
+            <strong>הפסקה</strong>
           </button>
 
-          <button onClick={onHistory}>
-            <span>📋</span>
-            <b>היסטוריה</b>
+          <button className="feature-card" onClick={onAbsence}>
+            <Calendar />
+            <strong>בקשת חופש</strong>
+          </button>
+
+          <button className="feature-card" onClick={onProfile}>
+            <FileIcon />
+            <strong>הפרופיל שלי</strong>
           </button>
         </div>
       </section>
