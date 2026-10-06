@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import BrandHeader from './BrandHeader'
 import { Calendar, Clock, Cup, FileIcon, Play } from './Icons'
 
@@ -30,7 +30,6 @@ function elapsedFrom(start) {
 
   let minutes = Math.floor((now.getTime() - started.getTime()) / 60000)
 
-  // Handles a shift that started before midnight.
   if (minutes < 0) minutes += 24 * 60
 
   const hours = Math.floor(minutes / 60)
@@ -53,30 +52,37 @@ export default function Home({
   onMenu,
 }) {
   const working = Boolean(status?.start && !status?.end)
-  const [nowTick, setNowTick] = useState(Date.now())
+  const [tick, setTick] = useState(0)
 
   useEffect(() => {
     if (!working) return undefined
 
     const timer = setInterval(() => {
-      setNowTick(Date.now())
+      setTick(value => value + 1)
     }, 30000)
 
     return () => clearInterval(timer)
   }, [working, status?.start])
 
-  const elapsed = useMemo(() => {
-    void nowTick
-    return working ? elapsedFrom(status.start) : '00:00'
-  }, [nowTick, working, status?.start])
+  // Keeps the elapsed-time display live while working.
+  void tick
+
+  const elapsed = working
+    ? elapsedFrom(status.start)
+    : '00:00'
 
   return (
     <main className="screen app-screen">
       <BrandHeader onBack={() => {}} onMenu={onMenu} />
 
       <section className="home-content">
-        <h1 className="greeting">שלום, {session.name} 👋</h1>
-        <div className="date-text">{formatDate()}</div>
+        <h1 className="greeting">
+          שלום, {session.name} 👋
+        </h1>
+
+        <div className="date-text">
+          {formatDate()}
+        </div>
 
         {working ? (
           <div className="work-summary">
@@ -84,16 +90,23 @@ export default function Home({
               <span>שעת התחלה</span>
               <strong>{status.start}</strong>
             </div>
+
             <div className="work-summary-item">
               <span>זמן עבודה עד כה</span>
               <strong>{elapsed}</strong>
             </div>
           </div>
         ) : (
-          <div className="home-time">{status?.start || currentTime()}</div>
+          <div className="home-time">
+            {status?.start || currentTime()}
+          </div>
         )}
 
-        {error && <div className="form-error">{error}</div>}
+        {error && (
+          <div className="form-error">
+            {error}
+          </div>
+        )}
 
         {working ? (
           <button
@@ -102,7 +115,11 @@ export default function Home({
             disabled={loading}
           >
             <span className="circle-icon stop">■</span>
-            <span>{loading ? 'מסיים...' : 'סיים עבודה'}</span>
+            <span>
+              {loading
+                ? 'מסיים...'
+                : 'סיים עבודה'}
+            </span>
           </button>
         ) : (
           <button
@@ -111,27 +128,43 @@ export default function Home({
             disabled={loading || Boolean(status?.end)}
           >
             <Play />
-            <span>{loading ? 'שומר...' : 'התחל עבודה'}</span>
+            <span>
+              {loading
+                ? 'שומר...'
+                : 'התחל עבודה'}
+            </span>
           </button>
         )}
 
         <div className="feature-grid">
-          <button className="feature-card" onClick={onHistory}>
+          <button
+            className="feature-card"
+            onClick={onHistory}
+          >
             <Clock />
             <strong>היסטוריה שלי</strong>
           </button>
 
-          <button className="feature-card" onClick={onBreak}>
+          <button
+            className="feature-card"
+            onClick={onBreak}
+          >
             <Cup />
             <strong>הפסקה</strong>
           </button>
 
-          <button className="feature-card" onClick={onAbsence}>
+          <button
+            className="feature-card"
+            onClick={onAbsence}
+          >
             <Calendar />
             <strong>בקשת חופש</strong>
           </button>
 
-          <button className="feature-card" onClick={onProfile}>
+          <button
+            className="feature-card"
+            onClick={onProfile}
+          >
             <FileIcon />
             <strong>הפרופיל שלי</strong>
           </button>

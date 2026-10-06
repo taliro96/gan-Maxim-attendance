@@ -70,6 +70,7 @@ export default function App() {
 
   async function startWork() {
     if (!session) return
+
     setLoading(true)
     setError('')
 
@@ -78,8 +79,14 @@ export default function App() {
         session: session.session,
         employeeId: session.employeeId,
       })
+
       setStatus(result.status || null)
-      setScreen('working')
+
+      // IMPORTANT:
+      // Stay on the home screen. The home screen itself
+      // changes to "סיים עבודה" and shows the start time
+      // and elapsed work time.
+      setScreen('home')
     } catch (requestError) {
       setError(
         requestError.message === 'ALREADY_STARTED'
@@ -93,6 +100,7 @@ export default function App() {
 
   async function endWork() {
     if (!session) return
+
     setLoading(true)
     setError('')
 
@@ -101,6 +109,7 @@ export default function App() {
         session: session.session,
         employeeId: session.employeeId,
       })
+
       setStatus(result.status || null)
       setScreen('thankYou')
     } catch (requestError) {
@@ -116,6 +125,7 @@ export default function App() {
 
   async function saveAbsence(data) {
     if (!session) return
+
     await api('saveAbsence', {
       session: session.session,
       employeeId: session.employeeId,
@@ -136,7 +146,11 @@ export default function App() {
 
   if (screen === 'welcome' || !session) {
     return (
-      <Welcome onLogin={login} loading={loading} error={error} />
+      <Welcome
+        onLogin={login}
+        loading={loading}
+        error={error}
+      />
     )
   }
 
