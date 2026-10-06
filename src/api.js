@@ -1,46 +1,57 @@
 const API_URL =
   'https://script.google.com/macros/s/AKfycbxKZdDeYw-TjNvy1Lm10qN_QLvDQ1j4WD9jilffU4UWiSiVJguA3mfdPIENBAOVBKpt/exec'
 
-export function api(action, params = {}) {
-  return new Promise((resolve, reject) => {
-    const callback = `ganApi_${Date.now()}_${Math.random()
-      .toString(36)
-      .slice(2)}`
+export async function api(action, params = {}) {
+  const query = new URLSearchParams({
+    action,
+    ...params,
+  })
 
-    const script = document.createElement('script')
-    const query = new URLSearchParams({
-      action,
-      ...params,
-      callback,
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), 15000)
+
+  try {
+    const response = await fetch(`${API_URL}?${query.toString()}`, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+      },
+      cache: 'no-store',
+      signal: controller.signal,
     })
 
-    const cleanup = () => {
-      clearTimeout(timer)
-      delete window[callback]
-      script.remove()
+    if (!response.ok) {
+      throw new Error('NETWORK')
     }
 
-    const timer = setTimeout(() => {
-      cleanup()
-      reject(new Error('TIMEOUT'))
-    }, 15000)
+    const data = await response.json()
 
-    window[callback] = (data) => {
-      cleanup()
-
-      if (data?.ok) {
-        resolve(data)
-      } else {
-        reject(new Error(data?.error || 'API_ERROR'))
-      }
+    if (data?.ok) {
+      return data
     }
 
-    script.onerror = () => {
-      cleanup()
-      reject(new Error('NETWORK'))
+    throw new Error(data?.error || 'API_ERROR')
+  } catch (error) {
+    if (error?.name === 'AbortError') {
+      throw new Error('TIMEOUT')
     }
 
-    script.src = `${API_URL}?${query.toString()}`
-    document.body.appendChild(script)
-  })
+    if (
+      error?.message === 'API_ERROR' ||
+      error?.message === 'INVALID_PIN' ||
+      error?.message === 'SESSION_EXPIRED' ||
+      error?.message === 'ALREADY_STARTED' ||
+      error?.message === 'NO_START' ||
+      error?.message === 'NO_OPEN_SHIFT' ||
+      error?.message === 'INVALID_MANUAL_DATA' ||
+      error?.message === 'INVALID_TIME_RANGE' ||
+      error?.message === 'INVALID_ABSENCE_DATA'
+    ) {
+      throw error
+    }
+
+    throw new Error('NETWORK')
+  } finally {
+    clearTimeout(timer)
+  }
 }
