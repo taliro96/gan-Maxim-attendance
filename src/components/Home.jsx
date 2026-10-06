@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from 'react'
 import BrandHeader from './BrandHeader'
 import { Calendar, Clock, Cup, FileIcon, Play } from './Icons'
 
@@ -17,10 +18,34 @@ function currentTime() {
   }).format(new Date())
 }
 
+function elapsedFrom(start) {
+  if (!start) return '00:00'
+
+  const parts = String(start).split(':').map(Number)
+  if (parts.length !== 2 || parts.some(Number.isNaN)) return '00:00'
+
+  const now = new Date()
+  const started = new Date(now)
+  started.setHours(parts[0], parts[1], 0, 0)
+
+  let minutes = Math.floor((now.getTime() - started.getTime()) / 60000)
+
+  // Handles a shift that started before midnight.
+  if (minutes < 0) minutes += 24 * 60
+
+  const hours = Math.floor(minutes / 60)
+  const mins = minutes % 60
+
+  return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`
+}
+
 export default function Home({
   session,
   status,
+  loading,
+  error,
   onStart,
+  onEnd,
   onHistory,
   onAbsence,
   onProfile,
@@ -28,6 +53,22 @@ export default function Home({
   onMenu,
 }) {
   const working = Boolean(status?.start && !status?.end)
+  const [nowTick, setNowTick] = useState(Date.now())
+
+  useEffect(() => {
+    if (!working) return undefined
+
+    const timer = setInterval(() => {
+      setNowTick(Date.now())
+    }, 30000)
+
+    return () => clearInterval(timer)
+  }, [working, status?.start])
+
+  const elapsed = useMemo(() => {
+    void nowTick
+    return working ? elapsedFrom(status.start) : '00:00'
+  }, [nowTick, working, status?.start])
 
   return (
     <main className="screen app-screen">
@@ -36,12 +77,43 @@ export default function Home({
       <section className="home-content">
         <h1 className="greeting">שלום, {session.name} 👋</h1>
         <div className="date-text">{formatDate()}</div>
-        <div className="home-time">{status?.start || currentTime()}</div>
 
-        <button className="start-work-button" onClick={onStart} disabled={working}>
-          <Play />
-          <span>{working ? 'עבודה בתהליך' : 'התחל עבודה'}</span>
-        </button>
+        {working ? (
+          <div className="work-summary">
+            <div className="work-summary-item">
+              <span>שעת התחלה</span>
+              <strong>{status.start}</strong>
+            </div>
+            <div className="work-summary-item">
+              <span>זמן עבודה עד כה</span>
+              <strong>{elapsed}</strong>
+            </div>
+          </div>
+        ) : (
+          <div className="home-time">{status?.start || currentTime()}</div>
+        )}
+
+        {error && <div className="form-error">{error}</div>}
+
+        {working ? (
+          <button
+            className="start-work-button finish-work-button"
+            onClick={onEnd}
+            disabled={loading}
+          >
+            <span className="circle-icon stop">■</span>
+            <span>{loading ? 'מסיים...' : 'סיים עבודה'}</span>
+          </button>
+        ) : (
+          <button
+            className="start-work-button"
+            onClick={onStart}
+            disabled={loading || Boolean(status?.end)}
+          >
+            <Play />
+            <span>{loading ? 'שומר...' : 'התחל עבודה'}</span>
+          </button>
+        )}
 
         <div className="feature-grid">
           <button className="feature-card" onClick={onHistory}>

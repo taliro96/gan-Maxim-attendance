@@ -43,9 +43,7 @@ export default function App() {
     setError('')
 
     try {
-      const result = await api('login', {
-        pin: code,
-      })
+      const result = await api('login', { pin: code })
 
       const next = {
         session: result.session,
@@ -73,6 +71,8 @@ export default function App() {
   async function startWork() {
     if (!session) return
     setLoading(true)
+    setError('')
+
     try {
       const result = await api('startWork', {
         session: session.session,
@@ -80,8 +80,12 @@ export default function App() {
       })
       setStatus(result.status || null)
       setScreen('working')
-    } catch {
-      setError('לא ניתן להתחיל את העבודה')
+    } catch (requestError) {
+      setError(
+        requestError.message === 'ALREADY_STARTED'
+          ? 'כבר התחלת עבודה היום'
+          : 'לא ניתן להתחיל את העבודה',
+      )
     } finally {
       setLoading(false)
     }
@@ -90,6 +94,8 @@ export default function App() {
   async function endWork() {
     if (!session) return
     setLoading(true)
+    setError('')
+
     try {
       const result = await api('endWork', {
         session: session.session,
@@ -97,8 +103,12 @@ export default function App() {
       })
       setStatus(result.status || null)
       setScreen('thankYou')
-    } catch {
-      setError('לא ניתן לסיים את העבודה')
+    } catch (requestError) {
+      setError(
+        requestError.message === 'NO_OPEN_SHIFT'
+          ? 'לא נמצאה התחלת עבודה פתוחה'
+          : 'לא ניתן לסיים את העבודה',
+      )
     } finally {
       setLoading(false)
     }
@@ -126,11 +136,7 @@ export default function App() {
 
   if (screen === 'welcome' || !session) {
     return (
-      <Welcome
-        onLogin={login}
-        loading={loading}
-        error={error}
-      />
+      <Welcome onLogin={login} loading={loading} error={error} />
     )
   }
 
@@ -139,7 +145,10 @@ export default function App() {
       <Home
         session={session}
         status={status}
+        loading={loading}
+        error={error}
         onStart={startWork}
+        onEnd={endWork}
         onHistory={() => setScreen('history')}
         onAbsence={() => setScreen('leave')}
         onProfile={() => setScreen('profile')}
