@@ -137,7 +137,7 @@ export default function Home({
 
           <button className="feature-card" onClick={onAbsence}>
             <Calendar />
-            <strong>בקשת חופש</strong>
+            <strong>הזנת היעדרות</strong>
           </button>
         </div>
       </section>
