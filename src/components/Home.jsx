@@ -41,6 +41,7 @@ function elapsedFrom(start) {
 export default function Home({
   session,
   status,
+  statusLoading,
   loading,
   error,
   onStart,
@@ -59,17 +60,18 @@ export default function Home({
 
     const timer = setInterval(() => {
       setTick(value => value + 1)
-    }, 30000)
+    }, 1000)
 
     return () => clearInterval(timer)
   }, [working, status?.start])
 
-  // Keeps the elapsed-time display live while working.
   void tick
 
   const elapsed = working
     ? elapsedFrom(status.start)
     : '00:00'
+
+  const checkingStatus = Boolean(statusLoading)
 
   return (
     <main className="screen app-screen">
@@ -84,7 +86,11 @@ export default function Home({
           {formatDate()}
         </div>
 
-        {working ? (
+        {checkingStatus ? (
+          <div className="home-time">
+            בודקת מצב נוכחות...
+          </div>
+        ) : working ? (
           <div className="work-summary">
             <div className="work-summary-item">
               <span>שעת התחלה</span>
@@ -98,7 +104,7 @@ export default function Home({
           </div>
         ) : (
           <div className="home-time">
-            {status?.start || currentTime()}
+            {currentTime()}
           </div>
         )}
 
@@ -108,7 +114,14 @@ export default function Home({
           </div>
         )}
 
-        {working ? (
+        {checkingStatus ? (
+          <button
+            className="start-work-button"
+            disabled
+          >
+            <span>טוענת מצב נוכחות...</span>
+          </button>
+        ) : working ? (
           <button
             className="start-work-button finish-work-button"
             onClick={onEnd}

@@ -17,35 +17,47 @@ export default function App() {
   const [session, setSession] = useState(saved)
   const [screen, setScreen] = useState(saved ? 'home' : 'welcome')
   const [status, setStatus] = useState(null)
+  const [statusLoading, setStatusLoading] = useState(Boolean(saved))
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const statusRequestRef = useRef(0)
 
   useEffect(() => {
-    if (session) refreshStatus(session)
+    if (session) {
+      refreshStatus(session)
+    } else {
+      setStatusLoading(false)
+    }
   }, [session])
 
   async function refreshStatus(current = session) {
-    if (!current?.employeeId) return
-  
+    if (!current?.employeeId) {
+      setStatusLoading(false)
+      return
+    }
+
     const requestId = ++statusRequestRef.current
-  
+    setStatusLoading(true)
+    setError('')
+
     try {
       const result = await api('getTodayStatus', {
         session: current.session,
         employeeId: current.employeeId,
       })
-  
-      // אם זו בקשה ישנה, לא נותנים לה לדרוס מידע חדש.
+
       if (requestId !== statusRequestRef.current) return
-  
+
       setStatus(result.status || null)
       setError('')
     } catch {
-      // גם שגיאה מבקשה ישנה לא צריכה לשנות את המסך.
       if (requestId !== statusRequestRef.current) return
-  
+
       setError('לא ניתן לטעון את מצב הנוכחות')
+    } finally {
+      if (requestId === statusRequestRef.current) {
+        setStatusLoading(false)
+      }
     }
   }
 
@@ -66,6 +78,7 @@ export default function App() {
       saveSession(next)
       setSession(next)
       setStatus(result.status || null)
+      setStatusLoading(false)
       setScreen('home')
     } catch (requestError) {
       setError(
@@ -82,7 +95,11 @@ export default function App() {
   async function startWork() {
     if (!session) return
 
+    // Invalidate any older status request immediately.
+    statusRequestRef.current += 1
+
     setLoading(true)
+    setStatusLoading(false)
     setError('')
 
     try {
@@ -91,34 +108,28 @@ export default function App() {
         employeeId: session.employeeId,
       })
 
-      // The server has already saved the row successfully.
-      // Update the screen immediately from the current local time,
-      // instead of depending on the returned status object.
-      const now = new Date()
-      const start = new Intl.DateTimeFormat('he-IL', {
+      const fallbackStart = new Intl.DateTimeFormat('he-IL', {
         hour: '2-digit',
         minute: '2-digit',
-      }).format(now)
-
-      statusRequestRef.current += 1
+      }).format(new Date())
 
       setStatus({
         ...(result.status || {}),
-        start,
-        end: '',
+        start: result.status?.start || fallbackStart,
+        end: result.status?.end || '',
       })
 
-      // Stay on the home screen. The home screen itself changes.
       setScreen('home')
-
-      // Refresh from the server in the background.
-      // refreshStatus(session)
     } catch (requestError) {
       setError(
         requestError.message === 'ALREADY_STARTED'
           ? 'כבר התחלת עבודה היום'
           : 'לא ניתן להתחיל את העבודה',
       )
+
+      if (requestError.message === 'ALREADY_STARTED') {
+        refreshStatus(session)
+      }
     } finally {
       setLoading(false)
     }
@@ -163,6 +174,7 @@ export default function App() {
     clearSession()
     setSession(null)
     setStatus(null)
+    setStatusLoading(false)
     setScreen('welcome')
   }
 
@@ -185,6 +197,7 @@ export default function App() {
       <Home
         session={session}
         status={status}
+        statusLoading={statusLoading}
         loading={loading}
         error={error}
         onStart={startWork}
