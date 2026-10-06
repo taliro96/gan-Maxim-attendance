@@ -1,0 +1,22 @@
+{
+  "name": "נוכחות צוות הגן",
+  "short_name": "נוכחות גן",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#fbf4f3",
+  "theme_color": "#f7d8df",
+  "lang": "he",
+  "dir": "rtl",
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
