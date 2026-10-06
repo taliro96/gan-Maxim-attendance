@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import BrandHeader from './BrandHeader'
 
-export default function LeaveRequest({ session, onBack, onMenu, onSave, onSaved }) {
+export default function LeaveRequest({ session, onBack, onMenu, onSave }) {
   const [kind, setKind] = useState('חופשה')
   const [date, setDate] = useState('')
   const [note, setNote] = useState('')
@@ -20,8 +20,6 @@ export default function LeaveRequest({ session, onBack, onMenu, onSave, onSaved 
         to: date,
         note,
       })
-
-      onSaved()
     } catch {
       setSaving(false)
     }

@@ -20,6 +20,7 @@ function currentTime() {
 
 function elapsedFrom(start) {
   if (!start) return '00:00'
+
   const parts = String(start).split(':').map(Number)
   if (parts.length !== 2 || parts.some(Number.isNaN)) return '00:00'
 
@@ -54,7 +55,11 @@ export default function Home({
 
   useEffect(() => {
     if (!working) return undefined
-    const timer = setInterval(() => setTick(value => value + 1), 1000)
+
+    const timer = setInterval(() => {
+      setTick(value => value + 1)
+    }, 1000)
+
     return () => clearInterval(timer)
   }, [working, status?.start])
 
@@ -69,48 +74,23 @@ export default function Home({
 
       {successMessage && (
         <div
+          className="absence-success-popup"
           role="status"
-          style={{
-            position: 'fixed',
-            top: '92px',
-            left: '50%',
-            zIndex: 50,
-            width: 'min(360px, calc(100% - 36px))',
-            transform: 'translateX(-50%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '10px',
-            padding: '14px 18px',
-            border: '1px solid #ccefe0',
-            borderRadius: '16px',
-            background: 'rgba(255,255,255,.97)',
-            color: '#237b5a',
-            fontWeight: 800,
-            boxShadow: '0 12px 28px rgba(68,57,48,.14)',
-          }}
+          aria-live="polite"
         >
-          <span
-            style={{
-              width: '27px',
-              height: '27px',
-              display: 'grid',
-              placeItems: 'center',
-              borderRadius: '50%',
-              background: '#43b986',
-              color: '#fff',
-            }}
-          >
-            ✓
-          </span>
-          <span>{successMessage}</span>
+          <span className="absence-success-icon">✓</span>
+          <span>ההיעדרות נשמרה בהצלחה</span>
         </div>
       )}
 
       <section className="home-content">
-        <h1 className="greeting">שלום, {session.name} 👋</h1>
+        <h1 className="greeting">
+          שלום, {session.name} 👋
+        </h1>
 
-        <div className="date-text">{formatDate()}</div>
+        <div className="date-text">
+          {formatDate()}
+        </div>
 
         {working ? (
           <div className="work-summary">
@@ -118,16 +98,23 @@ export default function Home({
               <span>שעת התחלה</span>
               <strong>{status.start}</strong>
             </div>
+
             <div className="work-summary-item">
               <span>זמן עבודה עד כה</span>
               <strong>{elapsed}</strong>
             </div>
           </div>
         ) : (
-          <div className="home-time">{currentTime()}</div>
+          <div className="home-time">
+            {currentTime()}
+          </div>
         )}
 
-        {error && !checkingStatus && <div className="form-error">{error}</div>}
+        {error && !checkingStatus && (
+          <div className="form-error">
+            {error}
+          </div>
+        )}
 
         {checkingStatus ? (
           <button className="start-work-button" disabled>

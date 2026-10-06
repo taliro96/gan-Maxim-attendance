@@ -53,7 +53,11 @@ export default function App() {
 
   useEffect(() => {
     if (!successMessage) return undefined
-    const timer = setTimeout(() => setSuccessMessage(''), 2200)
+
+    const timer = setTimeout(() => {
+      setSuccessMessage('')
+    }, 2500)
+
     return () => clearTimeout(timer)
   }, [successMessage])
 
@@ -86,8 +90,11 @@ export default function App() {
         return
       } catch {
         if (requestId !== statusRequestRef.current) return
+
         if (attempt < maxAttempts) {
-          await new Promise(resolve => setTimeout(resolve, attempt * 1200))
+          await new Promise(resolve =>
+            setTimeout(resolve, attempt * 1200),
+          )
         }
       }
     }
@@ -167,7 +174,9 @@ export default function App() {
           : 'לא ניתן להתחיל את העבודה',
       )
 
-      if (requestError.message === 'ALREADY_STARTED') refreshStatus(session)
+      if (requestError.message === 'ALREADY_STARTED') {
+        refreshStatus(session)
+      }
     } finally {
       setLoading(false)
     }
@@ -208,9 +217,8 @@ export default function App() {
       employeeId: session.employeeId,
       ...data,
     })
-  }
 
-  function handleAbsenceSaved() {
+    // Navigation happens here, only after the server confirms the save.
     setScreen('home')
     setSuccessMessage('ההיעדרות נשמרה בהצלחה ✓')
   }
@@ -229,7 +237,13 @@ export default function App() {
   }
 
   if (screen === 'welcome' || !session) {
-    return <Welcome onLogin={login} loading={loading} error={error} />
+    return (
+      <Welcome
+        onLogin={login}
+        loading={loading}
+        error={error}
+      />
+    )
   }
 
   if (screen === 'home') {
@@ -298,7 +312,6 @@ export default function App() {
         onBack={() => setScreen('home')}
         onMenu={openMenu}
         onSave={saveAbsence}
-        onSaved={handleAbsenceSaved}
       />
     )
   }
