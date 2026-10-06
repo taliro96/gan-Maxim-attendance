@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { api } from './api'
 import { clearSession, getSession, saveSession } from './utils/storage'
 
@@ -19,6 +19,7 @@ export default function App() {
   const [status, setStatus] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const statusRequestRef = useRef(0)
 
   useEffect(() => {
     if (session) refreshStatus(session)
@@ -26,14 +27,24 @@ export default function App() {
 
   async function refreshStatus(current = session) {
     if (!current?.employeeId) return
-
+  
+    const requestId = ++statusRequestRef.current
+  
     try {
       const result = await api('getTodayStatus', {
         session: current.session,
         employeeId: current.employeeId,
       })
+  
+      // אם זו בקשה ישנה, לא נותנים לה לדרוס מידע חדש.
+      if (requestId !== statusRequestRef.current) return
+  
       setStatus(result.status || null)
+      setError('')
     } catch {
+      // גם שגיאה מבקשה ישנה לא צריכה לשנות את המסך.
+      if (requestId !== statusRequestRef.current) return
+  
       setError('לא ניתן לטעון את מצב הנוכחות')
     }
   }
@@ -89,6 +100,8 @@ export default function App() {
         minute: '2-digit',
       }).format(now)
 
+      statusRequestRef.current += 1
+
       setStatus({
         ...(result.status || {}),
         start,
@@ -99,7 +112,7 @@ export default function App() {
       setScreen('home')
 
       // Refresh from the server in the background.
-      refreshStatus(session)
+      // refreshStatus(session)
     } catch (requestError) {
       setError(
         requestError.message === 'ALREADY_STARTED'
