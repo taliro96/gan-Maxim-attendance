@@ -61,35 +61,43 @@ export default function App() {
 
     const requestId = ++statusRequestRef.current
 
-    // If we already have a cached status, keep showing it while
-    // the fresh server check happens in the background.
     if (!status) {
       setStatusLoading(true)
     }
 
-    try {
-      const result = await api('getTodayStatus', {
-        session: current.session,
-        employeeId: current.employeeId,
-      })
+    const maxAttempts = 3
 
-      if (requestId !== statusRequestRef.current) return
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      try {
+        const result = await api('getTodayStatus', {
+          session: current.session,
+          employeeId: current.employeeId,
+        })
 
-      const nextStatus = result.status || null
-      setStatus(nextStatus)
-      cacheStatus(current.employeeId, nextStatus)
-      setError('')
-    } catch {
-      if (requestId !== statusRequestRef.current) return
+        if (requestId !== statusRequestRef.current) return
 
-      // Do not erase a valid cached status because of a slow/failed refresh.
+        const nextStatus = result.status || null
+        setStatus(nextStatus)
+        cacheStatus(current.employeeId, nextStatus)
+        setError('')
+        setStatusLoading(false)
+        return
+      } catch {
+        if (requestId !== statusRequestRef.current) return
+
+        if (attempt < maxAttempts) {
+          await new Promise(resolve =>
+            setTimeout(resolve, attempt * 1200),
+          )
+        }
+      }
+    }
+
+    if (requestId === statusRequestRef.current) {
       if (!status) {
         setError('לא ניתן לטעון את מצב הנוכחות')
       }
-    } finally {
-      if (requestId === statusRequestRef.current) {
-        setStatusLoading(false)
-      }
+      setStatusLoading(false)
     }
   }
 
@@ -241,8 +249,6 @@ export default function App() {
         onEnd={endWork}
         onHistory={() => setScreen('history')}
         onAbsence={() => setScreen('leave')}
-        onProfile={() => setScreen('profile')}
-        onBreak={() => setScreen('break')}
         onMenu={openMenu}
       />
     )

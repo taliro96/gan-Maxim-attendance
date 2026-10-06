@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import BrandHeader from './BrandHeader'
-import { Calendar, Clock, Cup, FileIcon, Play } from './Icons'
+import { Calendar, Clock, Play } from './Icons'
 
 function formatDate() {
   return new Intl.DateTimeFormat('he-IL', {
@@ -48,8 +48,6 @@ export default function Home({
   onEnd,
   onHistory,
   onAbsence,
-  onProfile,
-  onBreak,
   onMenu,
 }) {
   const working = Boolean(status?.start && !status?.end)
@@ -137,19 +135,9 @@ export default function Home({
             <strong>היסטוריה שלי</strong>
           </button>
 
-          <button className="feature-card" onClick={onBreak}>
-            <Cup />
-            <strong>הפסקה</strong>
-          </button>
-
           <button className="feature-card" onClick={onAbsence}>
             <Calendar />
             <strong>בקשת חופש</strong>
-          </button>
-
-          <button className="feature-card" onClick={onProfile}>
-            <FileIcon />
-            <strong>הפרופיל שלי</strong>
           </button>
         </div>
       </section>
