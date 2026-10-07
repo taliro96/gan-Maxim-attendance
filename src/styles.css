@@ -47,6 +47,28 @@ button:disabled {
   cursor: default;
 }
 
+/* Mobile app viewport */
+html,
+body,
+#root {
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+.screen {
+  width: 100%;
+  min-height: 100dvh;
+  max-height: 100dvh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
 .screen {
   position: relative;
   width: min(100%, 520px);
@@ -462,455 +484,121 @@ button:disabled {
   font-size: 13px;
 }
 
-/* החלפה מלאה של אזור ההיסטוריה ב-style.css */
+/* =========================================================
+   History
+   ========================================================= */
+
 .history-content {
-  padding-top: 6px;
-  padding-bottom: 30px;
+  padding-top: 8px;
 }
 
-.history-content .page-title {
-  margin: 8px 0 18px;
+.page-title {
+  margin: 12px 0 20px;
   text-align: center;
-  font-size: 28px;
-  font-weight: 850;
-  color: var(--ink);
+  font-size: 26px;
+  font-weight: 800;
 }
 
-.history-filters {
-  padding: 18px;
-  margin-bottom: 16px;
-  border: 1px solid #eee6df;
-  border-radius: 22px;
-  background: rgba(255, 255, 255, 0.95);
+.history-table {
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid #eee7e0;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.94);
   box-shadow: var(--shadow);
 }
 
-.history-filter-label,
-.history-month-field > span {
-  display: block;
-  margin-bottom: 9px;
-  color: #5e5853;
-  font-size: 13px;
-  font-weight: 850;
-}
+/* כותרות */
 
-.history-filter-buttons {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-}
-
-.history-filter-button {
-  min-height: 46px;
-  border: 0;
-  border-radius: 15px;
-  background: #f0f3f7;
-  color: #243047;
-  font-size: 15px;
-  font-weight: 750;
-  cursor: pointer;
-}
-
-.history-filter-button.active {
-  background: var(--pink);
-  color: #fff;
-  box-shadow: 0 7px 16px rgba(255, 102, 129, 0.2);
-}
-
-.history-month-field {
-  display: block;
-  margin-top: 18px;
-}
-
-.history-month-input {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.history-month-input input {
-  width: 100%;
+.history-table-header {
   min-height: 50px;
-  padding: 0 14px;
-  border: 1px solid #ddd8d2;
-  border-radius: 15px;
-  background: #fff;
-  color: #1f2940;
-  font-size: 16px;
-  font-weight: 650;
-  direction: ltr;
-}
-
-.history-month-input button {
-  position: absolute;
-  left: 8px;
-  width: 32px;
-  height: 32px;
-  border: 0;
-  border-radius: 50%;
-  background: #f0f3f7;
-  color: #555;
-  font-size: 22px;
-  cursor: pointer;
-}
-
-.history-month-field small {
-  display: block;
-  margin-top: 7px;
-  color: #817a74;
-  font-size: 12px;
-}
-
-.history-results-title {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  margin: 0 4px 10px;
-  color: #77716b;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.history-list {
-  display: grid;
-  gap: 10px;
-}
-
-.history-card {
-  position: relative;
-  display: flex;
   align-items: center;
-  gap: 12px;
-  min-height: 92px;
-  padding: 15px 14px;
-  border: 1px solid #eee8e2;
-  border-radius: 19px;
-  background: rgba(255, 255, 255, 0.97);
-  box-shadow: 0 7px 20px rgba(68, 57, 48, 0.06);
+  padding: 0 14px;
+  background: #f7f3ee;
+  color: #625b55;
+  font-size: 13px;
+  font-weight: 800;
 }
 
-.history-card-main {
-  flex: 1;
+.attendance-header {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr 1fr 0.85fr;
+}
+
+/* כרגע הכותרת של היעדרות מוסתרת.
+   כל רשומת היעדרות מקבלת מבנה משלה,
+   כדי לא לבלבל בין נוכחות להיעדרות. */
+
+.absence-header {
+  display: none;
+}
+
+/* שורת נוכחות */
+
+.history-table-row {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr 1fr 0.85fr;
+  min-height: 68px;
+  align-items: center;
+  padding: 9px 14px;
+  border-top: 1px solid #f0ece8;
+}
+
+.history-table-row > div,
+.history-absence-row > div {
   min-width: 0;
 }
 
-.history-card-topline {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.history-card-date {
-  color: #17223b;
-  font-size: 16px;
-  font-weight: 850;
-  direction: ltr;
-  text-align: right;
-}
-
-.history-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  width: fit-content;
-  padding: 6px 11px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 850;
-  white-space: nowrap;
-}
-
-.attendance-badge {
-  background: #d9f5e9;
-  color: #19815c;
-}
-
-.absence-badge {
-  background: #fff0dd;
-  color: #a85f25;
-}
-
-.history-attendance-times {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 10px;
-  color: #30394c;
-  font-size: 15px;
-  direction: ltr;
-}
-
-.history-attendance-times b {
-  color: #aaa39c;
-  font-weight: 500;
-}
-
-.history-total {
-  margin-top: 5px;
-  color: #716b65;
-  font-size: 13px;
-  font-weight: 750;
-}
-
-.history-total small {
-  font-size: 11px;
-  font-weight: 650;
-}
-
-.history-secondary {
-  margin-top: 7px;
-  color: #716b65;
-  font-size: 13px;
-}
-
-.history-edit-button {
-  flex: 0 0 44px;
-  width: 44px;
-  height: 44px;
-  border: 0;
-  border-radius: 14px;
-  background: #edf3fb;
-  color: #18345e;
-  font-size: 22px;
-  cursor: pointer;
-}
-
-.history-edit-button:active,
-.history-filter-button:active,
-.history-pagination button:active,
-.history-modal-actions button:active {
-  transform: scale(0.97);
-}
-
-.history-pagination {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-  gap: 10px;
-  margin-top: 16px;
-}
-
-.history-pagination button {
-  min-height: 44px;
-  border: 0;
-  border-radius: 15px;
-  background: #ffd3dd;
-  color: #8f3450;
+.history-date-cell {
   font-size: 14px;
   font-weight: 800;
-  cursor: pointer;
-}
-
-.history-pagination button:last-child {
-  background: var(--pink);
-  color: #fff;
-}
-
-.history-pagination button:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
-
-.history-pagination span {
-  color: #5f5954;
-  font-size: 12px;
-  font-weight: 750;
+  direction: ltr;
+  text-align: right;
   white-space: nowrap;
 }
 
-.history-state,
-.history-empty-card {
-  padding: 42px 20px;
+.history-time-cell {
+  font-size: 16px;
+  font-weight: 600;
+  direction: ltr;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.history-total-cell {
+  font-size: 15px;
+  font-weight: 800;
+  direction: ltr;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* שורת היעדרות */
+
+.history-absence-row {
+  display: grid;
+  grid-template-columns: 1.15fr 1.15fr 1fr;
+  min-height: 68px;
+  align-items: center;
+  padding: 9px 14px;
+  border-top: 1px solid #f0ece8;
+  background: #fffaf5;
+}
+
+.history-absence-type {
+  font-size: 15px;
+  font-weight: 800;
+  color: #8a5d3b;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* מצב טעינה */
+
+.history-loading {
+  padding: 45px 20px;
   text-align: center;
   color: var(--muted);
-}
-
-.history-empty-card {
-  display: grid;
-  justify-items: center;
-  gap: 6px;
-  border: 1px solid #eee8e2;
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: var(--shadow);
-}
-
-.history-empty-icon {
-  display: grid;
-  place-items: center;
-  width: 52px;
-  height: 52px;
-  margin-bottom: 4px;
-  border-radius: 50%;
-  background: #f2f5f8;
-  color: #637083;
-  font-size: 26px;
-}
-
-.history-empty-card strong {
-  color: #283148;
-  font-size: 16px;
-}
-
-.history-empty-card span {
-  font-size: 13px;
-}
-
-.history-modal-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 1000;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding: 16px;
-  background: rgba(34, 34, 34, 0.35);
-  backdrop-filter: blur(3px);
-}
-
-.history-modal {
-  position: relative;
-  width: min(100%, 430px);
-  max-height: calc(100vh - 32px);
-  overflow-y: auto;
-  padding: 18px 18px 20px;
-  border-radius: 28px 28px 20px 20px;
-  background: #fffaf5;
-  box-shadow: 0 -10px 40px rgba(45, 35, 30, 0.15);
-}
-
-.history-modal-handle {
-  width: 42px;
-  height: 5px;
-  margin: 0 auto 16px;
-  border-radius: 99px;
-  background: #ded9d4;
-}
-
-.history-modal h2 {
-  margin: 0 34px 22px;
-  color: #17223b;
-  text-align: center;
-  font-size: 24px;
-  font-weight: 850;
-}
-
-.history-modal-close {
-  position: absolute;
-  top: 15px;
-  left: 15px;
-  width: 40px;
-  height: 40px;
-  border: 0;
-  background: transparent;
-  color: #777;
-  font-size: 31px;
-  cursor: pointer;
-}
-
-.history-form-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-.history-modal label {
-  display: block;
-  margin-bottom: 14px;
-  color: #283148;
-  font-size: 13px;
-  font-weight: 800;
-}
-
-.history-modal label span {
-  color: #8a837c;
-  font-weight: 600;
-}
-
-.history-modal input,
-.history-modal select,
-.history-modal textarea {
-  box-sizing: border-box;
-  width: 100%;
-  margin-top: 7px;
-  padding: 13px 14px;
-  border: 1px solid #ddd8d2;
-  border-radius: 14px;
-  background: #fff;
-  color: #1f2940;
-  font: inherit;
-  font-size: 15px;
-  outline: none;
-}
-
-.history-modal input:focus,
-.history-modal select:focus,
-.history-modal textarea:focus {
-  border-color: #f69aae;
-  box-shadow: 0 0 0 3px rgba(255, 102, 129, 0.1);
-}
-
-.history-modal textarea {
-  min-height: 110px;
-  resize: vertical;
-}
-
-.history-save-error {
-  margin-bottom: 12px;
-  color: #c44545;
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.history-modal-actions {
-  display: grid;
-  grid-template-columns: 0.8fr 1.2fr;
-  gap: 10px;
-  margin-top: 6px;
-}
-
-.history-modal-actions button {
-  min-height: 52px;
-  border: 0;
-  border-radius: 16px;
-  font-size: 15px;
-  font-weight: 850;
-  cursor: pointer;
-}
-
-.history-cancel-button {
-  background: #edf2f8;
-  color: #20385d;
-}
-
-.history-save-button {
-  background: var(--pink);
-  color: #fff;
-  box-shadow: 0 8px 18px rgba(255, 102, 129, 0.2);
-}
-
-.history-modal-actions button:disabled {
-  opacity: 0.55;
-  cursor: default;
-}
-
-@media (max-width: 390px) {
-  .history-filter-buttons {
-    gap: 6px;
-  }
-
-  .history-filter-button {
-    font-size: 13px;
-  }
-
-  .history-card {
-    min-height: 86px;
-  }
-
-  .history-card-date {
-    font-size: 15px;
-  }
 }
 
 /* Leave */
