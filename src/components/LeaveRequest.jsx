@@ -3,7 +3,8 @@ import BrandHeader from './BrandHeader'
 
 export default function LeaveRequest({ session, onBack, onMenu, onSave }) {
   const [kind, setKind] = useState('חופשה')
-  const [date, setDate] = useState('')
+  const [fromDate, setFromDate] = useState('')
+  const [toDate, setToDate] = useState('')
   const [note, setNote] = useState('')
   const [saving, setSaving] = useState(false)
 
@@ -14,10 +15,20 @@ export default function LeaveRequest({ session, onBack, onMenu, onSave }) {
     setSaving(true)
 
     try {
+      if (!fromDate || !toDate) {
+        setSaving(false)
+        return
+      }
+
+      if (toDate < fromDate) {
+        setSaving(false)
+        return
+      }
+
       await onSave({
         type: kind,
-        from: date,
-        to: date,
+        from: fromDate,
+        to: toDate,
         note,
       })
     } catch {
@@ -33,12 +44,24 @@ export default function LeaveRequest({ session, onBack, onMenu, onSave }) {
         <h1 className="page-title">הזנת היעדרות</h1>
 
         <form onSubmit={submit} className="leave-form">
-          <label>תאריך</label>
+          <label>מתאריך</label>
           <div className="field-shell">
             <input
               type="date"
-              value={date}
-              onChange={(event) => setDate(event.target.value)}
+              value={fromDate}
+              onChange={(event) => setFromDate(event.target.value)}
+              required
+            />
+            <span>▣</span>
+          </div>
+
+          <label>עד תאריך</label>
+          <div className="field-shell">
+            <input
+              type="date"
+              value={toDate}
+              min={fromDate || undefined}
+              onChange={(event) => setToDate(event.target.value)}
               required
             />
             <span>▣</span>
