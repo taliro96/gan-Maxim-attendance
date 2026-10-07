@@ -1,40 +1,62 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api'
+import BrandHeader from './BrandHeader'
 
-export default function History({ session, onBack }) {
+export default function History({ session, onBack, onMenu }) {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   useEffect(() => {
+    let cancelled = false
+
+    setLoading(true)
+    setError('')
+
     api('getHistory', {
       session: session.session,
       employeeId: session.employeeId,
     })
       .then((result) => {
+        if (cancelled) return
         setItems(result.history || [])
       })
       .catch(() => {
+        if (cancelled) return
         setError('לא ניתן לטעון את ההיסטוריה')
       })
       .finally(() => {
-        setLoading(false)
+        if (!cancelled) {
+          setLoading(false)
+        }
       })
+
+    return () => {
+      cancelled = true
+    }
   }, [session])
 
   return (
-    <main className="app-shell">
-      <header className="page-header">
-        <button onClick={onBack}>חזרה</button>
-        <h1>היסטוריה</h1>
-      </header>
+    <main className="screen app-screen">
+      <BrandHeader
+        onBack={onBack}
+        onMenu={onMenu}
+      />
 
-      <section className="content">
+      <section className="page-content">
+        <h1 className="page-title">היסטוריה</h1>
+
         {loading && (
-          <div className="empty">טוענת...</div>
+          <div className="empty">
+            טוענת...
+          </div>
         )}
 
-        {error && <div className="error">{error}</div>}
+        {error && (
+          <div className="error">
+            {error}
+          </div>
+        )}
 
         {!loading && !error && items.length === 0 && (
           <div className="empty">
@@ -42,28 +64,33 @@ export default function History({ session, onBack }) {
           </div>
         )}
 
-        <div className="history-list">
-          {items.map((item, index) => (
-            <div
-              className="history-row"
-              key={item.id || index}
-            >
-              <div>
-                <b>{item.date}</b>
-                <span>
-                  {item.reportType || 'נוכחות'}
-                </span>
-              </div>
+        {!loading && !error && items.length > 0 && (
+          <div className="history-list">
+            {items.map((item, index) => (
+              <div
+                className="history-row"
+                key={item.id || index}
+              >
+                <div>
+                  <b>{item.date || '—'}</b>
+                  <span>
+                    {item.reportType || 'נוכחות'}
+                  </span>
+                </div>
 
-              <div>
-                <b>
-                  {item.start || '—'} – {item.end || '—'}
-                </b>
-                <span>{item.total || ''}</span>
+                <div>
+                  <b>
+                    {item.start || '—'} – {item.end || '—'}
+                  </b>
+
+                  {item.total && (
+                    <span>{item.total}</span>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </section>
     </main>
   )
