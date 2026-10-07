@@ -1,5 +1,5 @@
 const API_URL =
-  'https://script.google.com/macros/s/AKfycbzo9x8unh1WknrqSk6GFoQsEBFUKAe1h36bUgygguG3oJZdi_OnqF0nUP07DmuCZQeR/exec'
+  'https://script.google.com/macros/s/AKfycbzB00aHQ56TeTQ4BUpDF1OjErspNt6vN9rMObLMagst31Vxa1CWl6Abzk70dZrOAmj7/exec'
 
 export async function api(action, params = {}) {
   const query = new URLSearchParams({
@@ -13,40 +13,35 @@ export async function api(action, params = {}) {
   try {
     const response = await fetch(`${API_URL}?${query.toString()}`, {
       method: 'GET',
-      headers: {
-        Accept: 'application/json',
-      },
+      headers: { Accept: 'application/json' },
       cache: 'no-store',
       signal: controller.signal,
     })
 
-    if (!response.ok) {
-      throw new Error('NETWORK')
-    }
+    if (!response.ok) throw new Error('NETWORK')
 
     const data = await response.json()
 
-    if (data?.ok) {
-      return data
-    }
+    if (data?.ok) return data
 
     throw new Error(data?.error || 'API_ERROR')
   } catch (error) {
-    if (error?.name === 'AbortError') {
-      throw new Error('TIMEOUT')
-    }
+    if (error?.name === 'AbortError') throw new Error('TIMEOUT')
 
-    if (
-      error?.message === 'API_ERROR' ||
-      error?.message === 'INVALID_PIN' ||
-      error?.message === 'SESSION_EXPIRED' ||
-      error?.message === 'ALREADY_STARTED' ||
-      error?.message === 'NO_START' ||
-      error?.message === 'NO_OPEN_SHIFT' ||
-      error?.message === 'INVALID_MANUAL_DATA' ||
-      error?.message === 'INVALID_TIME_RANGE' ||
-      error?.message === 'INVALID_ABSENCE_DATA'
-    ) {
+    if ([
+      'API_ERROR',
+      'INVALID_PIN',
+      'SESSION_EXPIRED',
+      'ALREADY_STARTED',
+      'NO_START',
+      'NO_OPEN_SHIFT',
+      'INVALID_MANUAL_DATA',
+      'INVALID_TIME_RANGE',
+      'INVALID_ABSENCE_DATA',
+      'INVALID_HISTORY_UPDATE',
+      'HISTORY_RECORD_NOT_FOUND',
+      'ABSENCES_SHEET_MISSING',
+    ].includes(error?.message)) {
       throw error
     }
 
