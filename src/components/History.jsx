@@ -37,13 +37,13 @@ export default function History({ session, onBack, onMenu }) {
   }, [session])
 
   return (
-    <main className="screen app-screen">
+    <main className="screen app-screen history-screen">
       <BrandHeader
         onBack={onBack}
         onMenu={onMenu}
       />
 
-      <section className="page-content">
+      <section className="page-content history-content">
         <h1 className="page-title">היסטוריה</h1>
 
         {loading && (
@@ -67,27 +67,34 @@ export default function History({ session, onBack, onMenu }) {
         {!loading && !error && items.length > 0 && (
           <div className="history-list">
             {items.map((item, index) => (
-              <div
-                className="history-row"
+              <article
+                className="history-card"
                 key={item.id || index}
               >
-                <div>
-                  <b>{item.date || '—'}</b>
-                  <span>
+                <div className="history-card-top">
+                  <div className="history-date">
+                    {item.date || '—'}
+                  </div>
+
+                  <div className="history-type">
                     {item.reportType || 'נוכחות'}
-                  </span>
+                  </div>
                 </div>
 
-                <div>
-                  <b>
-                    {item.start || '—'} – {item.end || '—'}
-                  </b>
+                <div className="history-card-bottom">
+                  <div className="history-time">
+                    <span>{item.start || '—'}</span>
+                    <span className="history-dash">–</span>
+                    <span>{item.end || '—'}</span>
+                  </div>
 
                   {item.total && (
-                    <span>{item.total}</span>
+                    <div className="history-total">
+                      {item.total}
+                    </div>
                   )}
                 </div>
-              </div>
+              </article>
             ))}
           </div>
         )}
