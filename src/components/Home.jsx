@@ -2,973 +2,399 @@ import { useEffect, useMemo, useState } from 'react'
 import { api } from '../api'
 import BrandHeader from './BrandHeader'
 
-const MONTHS = [
-  'ינואר',
-  'פברואר',
-  'מרץ',
-  'אפריל',
-  'מאי',
-  'יוני',
-  'יולי',
-  'אוגוסט',
-  'ספטמבר',
-  'אוקטובר',
-  'נובמבר',
-  'דצמבר',
-]
-
-const WEEK_DAYS = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש']
+const WEEKDAYS = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳']
 
 function pad(value) {
   return String(value).padStart(2, '0')
 }
 
-function dateKey(date) {
-  return [
-    date.getFullYear(),
-    pad(date.getMonth() + 1),
-    pad(date.getDate()),
-  ].join('-')
+function dateKey(year, monthIndex, day) {
+  return `${year}-${pad(monthIndex + 1)}-${pad(day)}`
 }
 
-function parseDate(value) {
-  if (!value) return null
-
-  const text = String(value)
-
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) {
-    return null
-  }
-
-  return new Date(`${text}T00:00:00`)
+function formatDate(value) {
+  if (!value) return '—'
+  const match = String(value).match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  return match ? `${match[3]}/${match[2]}/${match[1]}` : String(value)
 }
 
-function formatHebrewDate(date) {
+function monthTitle(date) {
   return new Intl.DateTimeFormat('he-IL', {
-    weekday: 'long',
-    day: 'numeric',
     month: 'long',
     year: 'numeric',
   }).format(date)
 }
 
-function formatTime(value) {
-  if (!value) return ''
-
-  return String(value).slice(0, 5)
+function dayTitle(key) {
+  const [year, month, day] = key.split('-').map(Number)
+  return new Intl.DateTimeFormat('he-IL', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(new Date(year, month - 1, day))
 }
 
-function getDaysInMonth(year, month) {
-  return new Date(year, month + 1, 0).getDate()
+function daysInclusive(from, to) {
+  if (!from || !to) return []
+  const start = new Date(`${from}T12:00:00`)
+  const end = new Date(`${to}T12:00:00`)
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || start > end) return []
+
+  const result = []
+  const cursor = new Date(start)
+  while (cursor <= end) {
+    result.push(`${cursor.getFullYear()}-${pad(cursor.getMonth() + 1)}-${pad(cursor.getDate())}`)
+    cursor.setDate(cursor.getDate() + 1)
+  }
+  return result
 }
 
-function buildCalendar(year, month) {
-  const firstDay = new Date(year, month, 1)
-  const firstWeekday = firstDay.getDay()
-  const daysInMonth = getDaysInMonth(year, month)
+function minutesFromTime(value) {
+  const match = String(value || '').match(/^(\d{1,2}):(\d{2})$/)
+  if (!match) return null
+  return Number(match[1]) * 60 + Number(match[2])
+}
 
-  const days = []
+function minutesFromTotal(value) {
+  const match = String(value || '').match(/^(\d+):(\d{2})$/)
+  if (!match) return null
+  return Number(match[1]) * 60 + Number(match[2])
+}
 
-  // ימים מהחודש הקודם
-  for (let i = firstWeekday - 1; i >= 0; i -= 1) {
-    const date = new Date(
-      year,
-      month,
-      -i,
-    )
+function formatMinutes(minutes) {
+  if (!Number.isFinite(minutes)) return '00:00'
+  const safe = Math.max(0, Math.round(minutes))
+  return `${pad(Math.floor(safe / 60))}:${pad(safe % 60)}`
+}
 
-    days.push({
-      date,
-      day: date.getDate(),
-      currentMonth: false,
-      key: dateKey(date),
+function buildCalendar(year, monthIndex) {
+  const firstDay = new Date(year, monthIndex, 1).getDay()
+  const daysInMonth = new Date(year, monthIndex + 1, 0).getDate()
+  const cells = []
+
+  for (let i = 0; i < firstDay; i += 1) {
+    const day = new Date(year, monthIndex, -firstDay + i + 1)
+    cells.push({
+      key: dateKey(day.getFullYear(), day.getMonth(), day.getDate()),
+      day: day.getDate(),
+      outside: true,
     })
   }
 
-  // החודש הנוכחי
   for (let day = 1; day <= daysInMonth; day += 1) {
-    const date = new Date(year, month, day)
-
-    days.push({
-      date,
+    cells.push({
+      key: dateKey(year, monthIndex, day),
       day,
-      currentMonth: true,
-      key: dateKey(date),
+      outside: false,
     })
   }
 
-  // החודש הבא
-  let nextDay = 1
-
-  while (days.length < 42) {
-    const date = new Date(
-      year,
-      month + 1,
-      nextDay,
-    )
-
-    days.push({
-      date,
-      day: nextDay,
-      currentMonth: false,
-      key: dateKey(date),
+  const trailing = (7 - (cells.length % 7)) % 7
+  for (let i = 1; i <= trailing; i += 1) {
+    const day = new Date(year, monthIndex + 1, i)
+    cells.push({
+      key: dateKey(day.getFullYear(), day.getMonth(), day.getDate()),
+      day: day.getDate(),
+      outside: true,
     })
-
-    nextDay += 1
   }
 
-  return days
+  return cells
 }
 
-function getRecordForDay(history, key) {
-  return history.find((item) => {
+function getRecordsByDay(items) {
+  const map = new Map()
+
+  const add = (key, item) => {
+    if (!key) return
+    const current = map.get(key) || []
+    current.push(item)
+    map.set(key, current)
+  }
+
+  for (const item of items) {
     if (item.source === 'absence') {
-      if (!item.from) return false
-
-      const from = item.from
-      const to = item.to || item.from
-
-      return key >= from && key <= to
+      for (const key of daysInclusive(item.from, item.to || item.from)) add(key, item)
+    } else if (item.date) {
+      add(String(item.date), item)
     }
-
-    return item.date === key
-  })
-}
-
-function getRecordType(record) {
-  if (!record) return 'none'
-
-  if (record.source === 'absence') {
-    return record.absenceType === 'מחלה'
-      ? 'sick'
-      : 'vacation'
   }
 
+  return map
+}
+
+function getStatusForDay(records) {
+  if (!records?.length) return 'none'
+  if (records.some(item => item.source === 'absence' && item.absenceType === 'מחלה')) return 'sick'
+  if (records.some(item => item.source === 'absence')) return 'vacation'
   return 'attendance'
 }
 
-function calculateTotalMinutes(item) {
-  if (!item?.start || !item?.end) return 0
-
-  const start = String(item.start)
-    .split(':')
-    .map(Number)
-
-  const end = String(item.end)
-    .split(':')
-    .map(Number)
-
-  if (
-    start.length < 2 ||
-    end.length < 2 ||
-    start.some(Number.isNaN) ||
-    end.some(Number.isNaN)
-  ) {
-    return 0
+function countAbsenceDays(items, type, year, monthIndex) {
+  const wanted = new Set()
+  for (const item of items) {
+    if (item.source !== 'absence' || item.absenceType !== type) continue
+    for (const key of daysInclusive(item.from, item.to || item.from)) {
+      const [y, m] = key.split('-').map(Number)
+      if (y === year && m === monthIndex + 1) wanted.add(key)
+    }
   }
-
-  const startMinutes =
-    start[0] * 60 + start[1]
-
-  const endMinutes =
-    end[0] * 60 + end[1]
-
-  return Math.max(
-    0,
-    endMinutes - startMinutes,
-  )
-}
-
-function formatMinutes(totalMinutes) {
-  const hours = Math.floor(totalMinutes / 60)
-  const minutes = totalMinutes % 60
-
-  return `${hours}:${pad(minutes)}`
-}
-
-function countAbsenceDays(item, year, month) {
-  if (!item?.from) return 0
-
-  const monthStart = new Date(
-    year,
-    month,
-    1,
-  )
-
-  const monthEnd = new Date(
-    year,
-    month + 1,
-    0,
-  )
-
-  const from = parseDate(item.from)
-  const to = parseDate(item.to || item.from)
-
-  if (!from || !to) return 0
-
-  const start =
-    from > monthStart
-      ? from
-      : monthStart
-
-  const end =
-    to < monthEnd
-      ? to
-      : monthEnd
-
-  if (end < start) return 0
-
-  return (
-    Math.floor(
-      (end.getTime() - start.getTime()) /
-        86400000,
-    ) + 1
-  )
-}
-
-function getMonthlySummary(history, year, month) {
-  const monthPrefix =
-    `${year}-${pad(month + 1)}`
-
-  const attendance = history.filter(
-    (item) =>
-      item.source !== 'absence' &&
-      String(item.date || '').startsWith(
-        monthPrefix,
-      ),
-  )
-
-  const absences = history.filter(
-    (item) => {
-      if (item.source !== 'absence') {
-        return false
-      }
-
-      const from =
-        String(item.from || '')
-
-      const to =
-        String(item.to || item.from || '')
-
-      return (
-        from.slice(0, 7) <= monthPrefix &&
-        to.slice(0, 7) >= monthPrefix
-      )
-    },
-  )
-
-  const vacationDays =
-    absences
-      .filter(
-        (item) =>
-          item.absenceType === 'חופשה',
-      )
-      .reduce(
-        (sum, item) =>
-          sum +
-          countAbsenceDays(
-            item,
-            year,
-            month,
-          ),
-        0,
-      )
-
-  const sickDays =
-    absences
-      .filter(
-        (item) =>
-          item.absenceType === 'מחלה',
-      )
-      .reduce(
-        (sum, item) =>
-          sum +
-          countAbsenceDays(
-            item,
-            year,
-            month,
-          ),
-        0,
-      )
-
-  const totalMinutes =
-    attendance.reduce(
-      (sum, item) =>
-        sum + calculateTotalMinutes(item),
-      0,
-    )
-
-  return {
-    workDays: attendance.length,
-    totalMinutes,
-    vacationDays,
-    sickDays,
-  }
+  return wanted.size
 }
 
 export default function Home({
   session,
   status,
-  currentTime,
-  onStart,
-  onStop,
-  onAbsence,
-  onManualHours,
-  onMenu,
+  statusLoading,
+  loading,
+  error,
   successMessage,
+  onCloseSuccess,
+  onStart,
+  onEnd,
+  onHistory,
+  onAbsence,
+  onMenu,
 }) {
   const now = new Date()
-
-  const [viewDate, setViewDate] =
-    useState(
-      new Date(
-        now.getFullYear(),
-        now.getMonth(),
-        1,
-      ),
-    )
-
+  const [monthDate, setMonthDate] = useState(new Date(now.getFullYear(), now.getMonth(), 1))
   const [history, setHistory] = useState([])
-  const [loadingHistory, setLoadingHistory] =
-    useState(true)
-
-  const [selectedDate, setSelectedDate] =
-    useState(null)
-
-  const [starting, setStarting] =
-    useState(false)
-
-  const [stopping, setStopping] =
-    useState(false)
+  const [historyLoading, setHistoryLoading] = useState(true)
+  const [historyError, setHistoryError] = useState('')
+  const [selectedDay, setSelectedDay] = useState(null)
 
   async function loadHistory() {
     if (!session?.session) return
-
+    setHistoryLoading(true)
+    setHistoryError('')
     try {
-      setLoadingHistory(true)
-
-      const result = await api(
-        'getHistory',
-        {
-          session: session.session,
-          employeeId: session.employeeId,
-        },
+      const result = await api('getHistory', {
+        session: session.session,
+        employeeId: session.employeeId,
+      })
+      setHistory(Array.isArray(result.history) ? result.history : [])
+    } catch (requestError) {
+      setHistoryError(
+        requestError.message === 'SESSION_EXPIRED'
+          ? 'החיבור פג. התחברי מחדש.'
+          : 'לא ניתן לטעון את נתוני הלוח',
       )
-
-      setHistory(
-        Array.isArray(result.history)
-          ? result.history
-          : [],
-      )
-    } catch {
-      setHistory([])
     } finally {
-      setLoadingHistory(false)
+      setHistoryLoading(false)
     }
   }
 
   useEffect(() => {
     loadHistory()
-  }, [session?.session])
+  }, [session?.session, session?.employeeId])
 
-  const year =
-    viewDate.getFullYear()
+  useEffect(() => {
+    if (successMessage) loadHistory()
+  }, [successMessage])
 
-  const month =
-    viewDate.getMonth()
+  useEffect(() => {
+    if (status?.start || status?.end) loadHistory()
+  }, [status?.start, status?.end])
 
-  const calendarDays = useMemo(
-    () =>
-      buildCalendar(
-        year,
-        month,
-      ),
-    [year, month],
+  const year = monthDate.getFullYear()
+  const monthIndex = monthDate.getMonth()
+  const todayKey = dateKey(now.getFullYear(), now.getMonth(), now.getDate())
+
+  const recordsByDay = useMemo(() => getRecordsByDay(history), [history])
+  const cells = useMemo(() => buildCalendar(year, monthIndex), [year, monthIndex])
+
+  const monthAttendance = useMemo(() => {
+    const keys = new Set()
+    let totalMinutes = 0
+
+    for (const item of history) {
+      if (item.source !== 'attendance' || !item.date) continue
+      if (String(item.date).slice(0, 7) !== `${year}-${pad(monthIndex + 1)}`) continue
+      keys.add(item.date)
+      const direct = minutesFromTime(item.start) != null && minutesFromTime(item.end) != null
+        ? minutesFromTime(item.end) - minutesFromTime(item.start)
+        : minutesFromTotal(item.total)
+      if (Number.isFinite(direct) && direct >= 0) totalMinutes += direct
+    }
+
+    return { days: keys.size, totalMinutes }
+  }, [history, year, monthIndex])
+
+  const vacationDays = useMemo(
+    () => countAbsenceDays(history, 'חופשה', year, monthIndex),
+    [history, year, monthIndex],
+  )
+  const sickDays = useMemo(
+    () => countAbsenceDays(history, 'מחלה', year, monthIndex),
+    [history, year, monthIndex],
   )
 
-  const summary = useMemo(
-    () =>
-      getMonthlySummary(
-        history,
-        year,
-        month,
-      ),
-    [history, year, month],
-  )
+  const selectedRecords = selectedDay ? recordsByDay.get(selectedDay) || [] : []
+  const working = Boolean(status?.start && !status?.end)
 
-  const todayKey = dateKey(now)
-
-  const selectedRecord =
-    selectedDate
-      ? getRecordForDay(
-          history,
-          selectedDate,
-        )
-      : null
-
-  const selectedDateObject =
-    selectedDate
-      ? parseDate(selectedDate)
-      : null
-
-  const isWorking =
-    Boolean(
-      status?.start &&
-        !status?.end,
-    )
-
-  async function handleStart() {
-    if (starting) return
-
-    setStarting(true)
-
-    try {
-      await onStart()
-      await loadHistory()
-    } finally {
-      setStarting(false)
-    }
-  }
-
-  async function handleStop() {
-    if (stopping) return
-
-    setStopping(true)
-
-    try {
-      await onStop()
-      await loadHistory()
-    } finally {
-      setStopping(false)
-    }
-  }
-
-  function previousMonth() {
-    setSelectedDate(null)
-
-    setViewDate(
-      new Date(
-        year,
-        month - 1,
-        1,
-      ),
-    )
-  }
-
-  function nextMonth() {
-    setSelectedDate(null)
-
-    setViewDate(
-      new Date(
-        year,
-        month + 1,
-        1,
-      ),
-    )
+  function moveMonth(offset) {
+    setMonthDate(current => new Date(current.getFullYear(), current.getMonth() + offset, 1))
+    setSelectedDay(null)
   }
 
   return (
     <main className="screen app-screen home-calendar-screen">
-      <BrandHeader
-        hideBack
-        onMenu={onMenu}
-      />
+      <BrandHeader onMenu={onMenu} hideBack />
 
       <section className="home-calendar-content">
-
-        {/* Greeting */}
-
-        <header className="home-calendar-greeting">
-          <h1>
-            שלום, {session?.name || ''}
-            {' '}
-            👋
-          </h1>
-
-          <p>
-            {formatHebrewDate(now)}
-          </p>
-        </header>
-
-        {/* Month */}
-
-        <div className="calendar-month-header">
-          <button
-            type="button"
-            className="calendar-arrow"
-            onClick={previousMonth}
-            aria-label="חודש קודם"
-          >
-            ‹
-          </button>
-
-          <h2>
-            {MONTHS[month]} {year}
-          </h2>
-
-          <button
-            type="button"
-            className="calendar-arrow"
-            onClick={nextMonth}
-            aria-label="חודש הבא"
-          >
-            ›
-          </button>
+        <div className="home-calendar-greeting">
+          <h1>שלום, {session?.name || ''} 👋</h1>
+          <p>הנוכחות שלך במקום אחד</p>
         </div>
 
-        {/* Work status */}
-
-        <section
-          className={`home-work-status ${
-            isWorking
-              ? 'working'
-              : 'not-working'
-          }`}
-        >
-          {isWorking ? (
-            <div className="work-status-row">
-              <div className="work-start-info">
-                <div className="work-clock-icon">
-                  ◷
-                </div>
-
-                <div>
-                  <span>
-                    התחלת עבודה
-                  </span>
-
-                  <strong>
-                    {formatTime(
-                      status.start,
-                    )}
-                  </strong>
-                </div>
+        <section className={`home-work-status ${working ? '' : 'not-working'}`}>
+          <div className="work-status-row">
+            <div className="work-start-info">
+              <div className="work-clock-icon">◷</div>
+              <div>
+                <span>{working ? 'התחלת עבודה' : 'שעת התחלה'}</span>
+                <strong>{statusLoading ? '…' : status?.start || 'טרם התחלת'}</strong>
               </div>
+            </div>
 
+            {working ? (
               <button
                 type="button"
                 className="stop-work-button"
-                disabled={stopping}
-                onClick={handleStop}
+                onClick={onEnd}
+                disabled={loading}
               >
                 <span className="stop-square" />
-                {stopping
-                  ? 'מסיימת...'
-                  : 'סיום עבודה'}
+                {loading ? 'מסיים…' : 'סיום עבודה'}
               </button>
-            </div>
-          ) : (
-            <div className="work-status-row">
-              <div className="work-start-info">
-                <div className="work-clock-icon">
-                  ◷
-                </div>
-
-                <div>
-                  <span>
-                    השעה עכשיו
-                  </span>
-
-                  <strong>
-                    {currentTime ||
-                      '--:--'}
-                  </strong>
-                </div>
-              </div>
-
+            ) : (
               <button
                 type="button"
                 className="start-work-button"
-                disabled={starting}
-                onClick={handleStart}
+                onClick={onStart}
+                disabled={loading || statusLoading}
               >
-                {starting
-                  ? 'מתחילה...'
-                  : 'התחל עבודה'}
+                {loading ? 'מתחילה…' : 'התחל עבודה'}
               </button>
-            </div>
-          )}
+            )}
+          </div>
         </section>
 
-        {/* Quick actions */}
+        {error && <div className="error">{error}</div>}
+
+        {successMessage && (
+          <button type="button" className="home-success-message" onClick={onCloseSuccess}>
+            {successMessage}
+          </button>
+        )}
 
         <div className="home-quick-actions">
-          <button
-            type="button"
-            className="quick-action absence"
-            onClick={onAbsence}
-          >
-            <span className="quick-action-icon">
-              ☂
-            </span>
-
-            <strong>
-              הזנת היעדרות
-            </strong>
-
-            <b>＋</b>
+          <button type="button" className="quick-action absence" onClick={onAbsence}>
+            <span className="quick-action-icon">📅</span>
+            <strong>הזנת היעדרות</strong>
+            <b>‹</b>
           </button>
-
-          <button
-            type="button"
-            className="quick-action manual"
-            onClick={onManualHours}
-          >
-            <span className="quick-action-icon">
-              ▤
-            </span>
-
-            <strong>
-              הזנת שעות ידנית
-            </strong>
-
-            <b>＋</b>
+          <button type="button" className="quick-action manual" onClick={onHistory}>
+            <span className="quick-action-icon">▣</span>
+            <strong>היסטוריית דיווחים</strong>
+            <b>‹</b>
           </button>
         </div>
-
-        {/* Monthly summary */}
 
         <div className="monthly-summary-line">
-          <span>
-            <strong>
-              {summary.workDays}
-            </strong>
-            {' '}
-            ימי עבודה
-          </span>
-
+          <span><strong>{monthAttendance.days}</strong> ימי עבודה</span>
           <i />
-
-          <span>
-            <strong>
-              {formatMinutes(
-                summary.totalMinutes,
-              )}
-            </strong>
-            {' '}
-            שעות עבודה
-          </span>
-
+          <span><strong>{formatMinutes(monthAttendance.totalMinutes)}</strong> שעות</span>
           <i />
-
-          <span>
-            <strong>
-              {summary.vacationDays}
-            </strong>
-            {' '}
-            חופשה
-          </span>
-
+          <span><strong>{vacationDays}</strong> חופשה</span>
           <i />
-
-          <span>
-            <strong>
-              {summary.sickDays}
-            </strong>
-            {' '}
-            מחלה
-          </span>
+          <span><strong>{sickDays}</strong> מחלה</span>
         </div>
 
-        {/* Calendar */}
+        <div className="calendar-month-header">
+          <button type="button" className="calendar-arrow" onClick={() => moveMonth(-1)} aria-label="חודש קודם">‹</button>
+          <h2>{monthTitle(monthDate)}</h2>
+          <button type="button" className="calendar-arrow" onClick={() => moveMonth(1)} aria-label="חודש הבא">›</button>
+        </div>
 
-        <section className="attendance-calendar">
-
+        <section className="attendance-calendar" aria-label="לוח נוכחות חודשי">
           <div className="calendar-weekdays">
-            {WEEK_DAYS.map(
-              (day) => (
-                <div key={day}>
-                  {day}
-                </div>
-              ),
-            )}
+            {WEEKDAYS.map(day => <div key={day}>{day}</div>)}
           </div>
 
           <div className="calendar-grid">
-            {calendarDays.map(
-              (day) => {
-                const record =
-                  getRecordForDay(
-                    history,
-                    day.key,
-                  )
+            {cells.map(cell => {
+              const records = recordsByDay.get(cell.key) || []
+              const kind = getStatusForDay(records)
+              const isToday = cell.key === todayKey
+              const isSelected = cell.key === selectedDay
 
-                const type =
-                  getRecordType(
-                    record,
-                  )
-
-                const isToday =
-                  day.key ===
-                  todayKey
-
-                const isSelected =
-                  day.key ===
-                  selectedDate
-
-                return (
-                  <button
-                    key={day.key}
-                    type="button"
-                    className={[
-                      'calendar-day',
-                      !day.currentMonth
-                        ? 'outside'
-                        : '',
-                      isToday
-                        ? 'today'
-                        : '',
-                      isSelected
-                        ? 'selected'
-                        : '',
-                      type,
-                    ]
-                      .filter(Boolean)
-                      .join(' ')}
-                    onClick={() => {
-                      if (
-                        day.currentMonth
-                      ) {
-                        setSelectedDate(
-                          day.key,
-                        )
-                      }
-                    }}
-                  >
-                    <span className="calendar-day-number">
-                      {day.day}
-                    </span>
-
-                    {type ===
-                      'attendance' && (
-                      <span className="calendar-day-dot attendance" />
-                    )}
-
-                    {type ===
-                      'vacation' && (
-                      <span className="calendar-day-symbol vacation">
-                        ☂
-                      </span>
-                    )}
-
-                    {type ===
-                      'sick' && (
-                      <span className="calendar-day-symbol sick">
-                        ♧
-                      </span>
-                    )}
-
-                    {type ===
-                      'none' &&
-                      day.currentMonth &&
-                      day.key < todayKey && (
-                        <span className="calendar-day-dot none" />
-                      )}
-                  </button>
-                )
-              },
-            )}
+              return (
+                <button
+                  key={cell.key}
+                  type="button"
+                  className={`calendar-day ${cell.outside ? 'outside' : ''} ${kind} ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''}`}
+                  onClick={() => setSelectedDay(cell.key)}
+                  aria-label={`${cell.day} ${records.length ? 'יש דיווח' : 'אין דיווח'}`}
+                >
+                  <span className="calendar-day-number">{cell.day}</span>
+                  {kind === 'attendance' && <span className="calendar-day-dot attendance" />}
+                  {kind === 'none' && !cell.outside && <span className="calendar-day-dot none" />}
+                  {kind === 'vacation' && <span className="calendar-day-symbol vacation">♥</span>}
+                  {kind === 'sick' && <span className="calendar-day-symbol sick">✚</span>}
+                </button>
+              )
+            })}
           </div>
 
           <div className="calendar-legend">
-            <span>
-              <i className="legend-dot attendance" />
-              נוכחות
-            </span>
-
-            <span>
-              <i className="legend-dot vacation" />
-              חופשה
-            </span>
-
-            <span>
-              <i className="legend-dot sick" />
-              מחלה
-            </span>
-
-            <span>
-              <i className="legend-dot none" />
-              ללא דיווח
-            </span>
+            <span><i className="legend-dot attendance" /> נוכחות</span>
+            <span><i className="legend-dot vacation" /> חופשה</span>
+            <span><i className="legend-dot sick" /> מחלה</span>
+            <span><i className="legend-dot none" /> ללא דיווח</span>
           </div>
+
+          {historyLoading && <div className="calendar-loading">טוענת את נתוני ההיסטוריה…</div>}
+          {!historyLoading && historyError && <div className="calendar-loading">{historyError}</div>}
         </section>
-
-        {loadingHistory && (
-          <div className="calendar-loading">
-            טוענת נתוני חודש...
-          </div>
-        )}
-
-        {successMessage && (
-          <div className="home-success-message">
-            {successMessage}
-          </div>
-        )}
       </section>
 
-      {/* Day details */}
-
-      {selectedDate && (
-        <div
-          className="calendar-day-backdrop"
-          onClick={() =>
-            setSelectedDate(null)
-          }
-        >
-          <section
-            className="calendar-day-modal"
-            onClick={(event) =>
-              event.stopPropagation()
-            }
-          >
-            <button
-              type="button"
-              className="calendar-day-close"
-              onClick={() =>
-                setSelectedDate(null)
-              }
-              aria-label="סגירה"
-            >
-              ×
-            </button>
-
+      {selectedDay && (
+        <div className="calendar-day-backdrop" onClick={() => setSelectedDay(null)}>
+          <section className="calendar-day-modal" onClick={event => event.stopPropagation()}>
             <div className="calendar-modal-handle" />
+            <button type="button" className="calendar-day-close" onClick={() => setSelectedDay(null)} aria-label="סגירה">×</button>
+            <h2>{dayTitle(selectedDay)}</h2>
 
-            <h2>
-              {selectedDateObject &&
-                new Intl.DateTimeFormat(
-                  'he-IL',
-                  {
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric',
-                  },
-                ).format(
-                  selectedDateObject,
-                )}
-            </h2>
-
-            {!selectedRecord && (
+            {selectedRecords.length === 0 ? (
               <div className="calendar-empty-day">
                 <span>○</span>
-                <strong>
-                  אין דיווח ביום זה
-                </strong>
+                <strong>אין דיווח ליום הזה</strong>
               </div>
+            ) : (
+              selectedRecords.map((item, index) => {
+                if (item.source === 'absence') {
+                  return (
+                    <article className="calendar-detail-card absence-detail" key={`${item.id || 'absence'}-${index}`}>
+                      <div className="detail-title"><span>{item.absenceType === 'מחלה' ? '✚' : '♥'}</span><strong>{item.absenceType || 'היעדרות'}</strong></div>
+                      <div className="detail-row"><span>תקופה</span><strong>{formatDate(item.from)}{item.to && item.to !== item.from ? ` – ${formatDate(item.to)}` : ''}</strong></div>
+                      {item.note && <div className="detail-note">{item.note}</div>}
+                    </article>
+                  )
+                }
+
+                return (
+                  <article className="calendar-detail-card attendance-detail" key={`${item.id || 'attendance'}-${index}`}>
+                    <div className="detail-title"><span>◷</span><strong>נוכחות</strong></div>
+                    <div className="detail-row"><span>שעת התחלה</span><strong>{item.start || '—'}</strong></div>
+                    <div className="detail-row"><span>שעת סיום</span><strong>{item.end || '—'}</strong></div>
+                    <div className="detail-row"><span>סה״כ</span><strong>{item.total || '—'}</strong></div>
+                    {item.note && <div className="detail-note">{item.note}</div>}
+                  </article>
+                )
+              })
             )}
-
-            {selectedRecord &&
-              selectedRecord.source !==
-                'absence' && (
-                <div className="calendar-detail-card attendance-detail">
-                  <div className="detail-title">
-                    <span>
-                      ●
-                    </span>
-
-                    <strong>
-                      נוכחות
-                    </strong>
-                  </div>
-
-                  <div className="detail-row">
-                    <span>
-                      שעת התחלה
-                    </span>
-
-                    <strong>
-                      {formatTime(
-                        selectedRecord.start,
-                      ) || '—'}
-                    </strong>
-                  </div>
-
-                  <div className="detail-row">
-                    <span>
-                      שעת סיום
-                    </span>
-
-                    <strong>
-                      {formatTime(
-                        selectedRecord.end,
-                      ) || '—'}
-                    </strong>
-                  </div>
-
-                  <div className="detail-row">
-                    <span>
-                      סה״כ
-                    </span>
-
-                    <strong>
-                      {selectedRecord.total ||
-                        '—'}
-                    </strong>
-                  </div>
-
-                  {selectedRecord.note && (
-                    <div className="detail-note">
-                      {selectedRecord.note}
-                    </div>
-                  )}
-                </div>
-              )}
-
-            {selectedRecord &&
-              selectedRecord.source ===
-                'absence' && (
-                <div className="calendar-detail-card absence-detail">
-                  <div className="detail-title">
-                    <span>
-                      {selectedRecord.absenceType ===
-                      'מחלה'
-                        ? '♧'
-                        : '☂'}
-                    </span>
-
-                    <strong>
-                      {selectedRecord.absenceType ||
-                        'היעדרות'}
-                    </strong>
-                  </div>
-
-                  <div className="detail-row">
-                    <span>
-                      מתאריך
-                    </span>
-
-                    <strong>
-                      {selectedRecord.from
-                        ? selectedRecord.from
-                            .split('-')
-                            .reverse()
-                            .join('/')
-                        : '—'}
-                    </strong>
-                  </div>
-
-                  <div className="detail-row">
-                    <span>
-                      עד תאריך
-                    </span>
-
-                    <strong>
-                      {selectedRecord.to
-                        ? selectedRecord.to
-                            .split('-')
-                            .reverse()
-                            .join('/')
-                        : '—'}
-                    </strong>
-                  </div>
-
-                  {selectedRecord.note && (
-                    <div className="detail-note">
-                      {selectedRecord.note}
-                    </div>
-                  )}
-                </div>
-              )}
           </section>
         </div>
       )}
