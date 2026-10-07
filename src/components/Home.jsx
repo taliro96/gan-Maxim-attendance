@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
+import { api } from '../api'
 import BrandHeader from './BrandHeader'
 
-const MONTH_NAMES = [
+const MONTHS = [
   'ינואר',
   'פברואר',
   'מרץ',
@@ -22,16 +23,27 @@ function pad(value) {
   return String(value).padStart(2, '0')
 }
 
-function toDateKey(date) {
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+function dateKey(date) {
+  return [
+    date.getFullYear(),
+    pad(date.getMonth() + 1),
+    pad(date.getDate()),
+  ].join('-')
 }
 
-function formatTime(value) {
-  if (!value) return ''
-  return String(value).slice(0, 5)
+function parseDate(value) {
+  if (!value) return null
+
+  const text = String(value)
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+    return null
+  }
+
+  return new Date(`${text}T00:00:00`)
 }
 
-function formatDateHebrew(date) {
+function formatHebrewDate(date) {
   return new Intl.DateTimeFormat('he-IL', {
     weekday: 'long',
     day: 'numeric',
@@ -40,26 +52,40 @@ function formatDateHebrew(date) {
   }).format(date)
 }
 
-function getCalendarDays(year, month) {
+function formatTime(value) {
+  if (!value) return ''
+
+  return String(value).slice(0, 5)
+}
+
+function getDaysInMonth(year, month) {
+  return new Date(year, month + 1, 0).getDate()
+}
+
+function buildCalendar(year, month) {
   const firstDay = new Date(year, month, 1)
   const firstWeekday = firstDay.getDay()
-
-  const daysInMonth = new Date(year, month + 1, 0).getDate()
-  const previousMonthDays = new Date(year, month, 0).getDate()
+  const daysInMonth = getDaysInMonth(year, month)
 
   const days = []
 
+  // ימים מהחודש הקודם
   for (let i = firstWeekday - 1; i >= 0; i -= 1) {
-    const date = new Date(year, month - 1, previousMonthDays - i)
+    const date = new Date(
+      year,
+      month,
+      -i,
+    )
 
     days.push({
       date,
       day: date.getDate(),
       currentMonth: false,
-      key: toDateKey(date),
+      key: dateKey(date),
     })
   }
 
+  // החודש הנוכחי
   for (let day = 1; day <= daysInMonth; day += 1) {
     const date = new Date(year, month, day)
 
@@ -67,199 +93,351 @@ function getCalendarDays(year, month) {
       date,
       day,
       currentMonth: true,
-      key: toDateKey(date),
+      key: dateKey(date),
     })
   }
 
-  const remaining = 42 - days.length
+  // החודש הבא
+  let nextDay = 1
 
-  for (let day = 1; day <= remaining; day += 1) {
-    const date = new Date(year, month + 1, day)
+  while (days.length < 42) {
+    const date = new Date(
+      year,
+      month + 1,
+      nextDay,
+    )
 
     days.push({
       date,
-      day,
+      day: nextDay,
       currentMonth: false,
-      key: toDateKey(date),
+      key: dateKey(date),
     })
+
+    nextDay += 1
   }
 
   return days
 }
 
-function getItemForDay(items, dateKey) {
-  return items.find((item) => {
+function getRecordForDay(history, key) {
+  return history.find((item) => {
     if (item.source === 'absence') {
-      return dateKey >= item.from && dateKey <= item.to
+      if (!item.from) return false
+
+      const from = item.from
+      const to = item.to || item.from
+
+      return key >= from && key <= to
     }
 
-    return item.date === dateKey
+    return item.date === key
   })
 }
 
-function getDayType(item) {
-  if (!item) return 'none'
+function getRecordType(record) {
+  if (!record) return 'none'
 
-  if (item.source === 'absence') {
-    if (item.absenceType === 'מחלה') return 'sick'
-    return 'vacation'
+  if (record.source === 'absence') {
+    return record.absenceType === 'מחלה'
+      ? 'sick'
+      : 'vacation'
   }
 
   return 'attendance'
 }
 
-function getMonthSummary(items, year, month) {
-  const prefix = `${year}-${pad(month + 1)}`
+function calculateTotalMinutes(item) {
+  if (!item?.start || !item?.end) return 0
 
-  const monthItems = items.filter((item) => {
-    if (item.source === 'absence') {
-      return item.from?.slice(0, 7) <= prefix &&
-        item.to?.slice(0, 7) >= prefix
-    }
+  const start = String(item.start)
+    .split(':')
+    .map(Number)
 
-    return item.date?.slice(0, 7) === prefix
-  })
+  const end = String(item.end)
+    .split(':')
+    .map(Number)
 
-  const attendance = monthItems.filter(
-    (item) => item.source !== 'absence',
-  )
-
-  const absences = monthItems.filter(
-    (item) => item.source === 'absence',
-  )
-
-  const vacationDays = absences
-    .filter((item) => item.absenceType === 'חופשה')
-    .reduce((sum, item) => sum + countOverlapDays(item, year, month), 0)
-
-  const sickDays = absences
-    .filter((item) => item.absenceType === 'מחלה')
-    .reduce((sum, item) => sum + countOverlapDays(item, year, month), 0)
-
-  const totalMinutes = attendance.reduce((sum, item) => {
-    if (item.totalMinutes) return sum + Number(item.totalMinutes)
-
-    if (!item.start || !item.end) return sum
-
-    const [startHour, startMinute] = item.start.split(':').map(Number)
-    const [endHour, endMinute] = item.end.split(':').map(Number)
-
-    const start = startHour * 60 + startMinute
-    const end = endHour * 60 + endMinute
-
-    return sum + Math.max(0, end - start)
-  }, 0)
-
-  return {
-    workDays: attendance.length,
-    vacationDays,
-    sickDays,
-    totalMinutes,
+  if (
+    start.length < 2 ||
+    end.length < 2 ||
+    start.some(Number.isNaN) ||
+    end.some(Number.isNaN)
+  ) {
+    return 0
   }
+
+  const startMinutes =
+    start[0] * 60 + start[1]
+
+  const endMinutes =
+    end[0] * 60 + end[1]
+
+  return Math.max(
+    0,
+    endMinutes - startMinutes,
+  )
 }
 
-function countOverlapDays(item, year, month) {
-  if (!item.from) return 0
+function formatMinutes(totalMinutes) {
+  const hours = Math.floor(totalMinutes / 60)
+  const minutes = totalMinutes % 60
 
-  const monthStart = new Date(year, month, 1)
-  const monthEnd = new Date(year, month + 1, 0)
+  return `${hours}:${pad(minutes)}`
+}
 
-  const from = new Date(`${item.from}T00:00:00`)
-  const to = new Date(`${item.to || item.from}T00:00:00`)
+function countAbsenceDays(item, year, month) {
+  if (!item?.from) return 0
 
-  const start = from > monthStart ? from : monthStart
-  const end = to < monthEnd ? to : monthEnd
+  const monthStart = new Date(
+    year,
+    month,
+    1,
+  )
+
+  const monthEnd = new Date(
+    year,
+    month + 1,
+    0,
+  )
+
+  const from = parseDate(item.from)
+  const to = parseDate(item.to || item.from)
+
+  if (!from || !to) return 0
+
+  const start =
+    from > monthStart
+      ? from
+      : monthStart
+
+  const end =
+    to < monthEnd
+      ? to
+      : monthEnd
 
   if (end < start) return 0
 
-  return Math.floor((end - start) / 86400000) + 1
+  return (
+    Math.floor(
+      (end.getTime() - start.getTime()) /
+        86400000,
+    ) + 1
+  )
 }
 
-function formatMinutes(minutes) {
-  const hours = Math.floor(minutes / 60)
-  const remaining = minutes % 60
+function getMonthlySummary(history, year, month) {
+  const monthPrefix =
+    `${year}-${pad(month + 1)}`
 
-  return `${hours}:${pad(remaining)}`
+  const attendance = history.filter(
+    (item) =>
+      item.source !== 'absence' &&
+      String(item.date || '').startsWith(
+        monthPrefix,
+      ),
+  )
+
+  const absences = history.filter(
+    (item) => {
+      if (item.source !== 'absence') {
+        return false
+      }
+
+      const from =
+        String(item.from || '')
+
+      const to =
+        String(item.to || item.from || '')
+
+      return (
+        from.slice(0, 7) <= monthPrefix &&
+        to.slice(0, 7) >= monthPrefix
+      )
+    },
+  )
+
+  const vacationDays =
+    absences
+      .filter(
+        (item) =>
+          item.absenceType === 'חופשה',
+      )
+      .reduce(
+        (sum, item) =>
+          sum +
+          countAbsenceDays(
+            item,
+            year,
+            month,
+          ),
+        0,
+      )
+
+  const sickDays =
+    absences
+      .filter(
+        (item) =>
+          item.absenceType === 'מחלה',
+      )
+      .reduce(
+        (sum, item) =>
+          sum +
+          countAbsenceDays(
+            item,
+            year,
+            month,
+          ),
+        0,
+      )
+
+  const totalMinutes =
+    attendance.reduce(
+      (sum, item) =>
+        sum + calculateTotalMinutes(item),
+      0,
+    )
+
+  return {
+    workDays: attendance.length,
+    totalMinutes,
+    vacationDays,
+    sickDays,
+  }
 }
 
 export default function Home({
   session,
   status,
-  history = [],
   currentTime,
-  successMessage,
   onStart,
   onStop,
   onAbsence,
   onManualHours,
   onMenu,
+  successMessage,
 }) {
   const now = new Date()
 
-  const [viewDate, setViewDate] = useState(
-    new Date(now.getFullYear(), now.getMonth(), 1),
-  )
+  const [viewDate, setViewDate] =
+    useState(
+      new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        1,
+      ),
+    )
 
-  const [selectedDate, setSelectedDate] = useState(null)
-  const [starting, setStarting] = useState(false)
-  const [stopping, setStopping] = useState(false)
+  const [history, setHistory] = useState([])
+  const [loadingHistory, setLoadingHistory] =
+    useState(true)
 
-  const [tick, setTick] = useState(0)
+  const [selectedDate, setSelectedDate] =
+    useState(null)
+
+  const [starting, setStarting] =
+    useState(false)
+
+  const [stopping, setStopping] =
+    useState(false)
+
+  async function loadHistory() {
+    if (!session?.session) return
+
+    try {
+      setLoadingHistory(true)
+
+      const result = await api(
+        'getHistory',
+        {
+          session: session.session,
+          employeeId: session.employeeId,
+        },
+      )
+
+      setHistory(
+        Array.isArray(result.history)
+          ? result.history
+          : [],
+      )
+    } catch {
+      setHistory([])
+    } finally {
+      setLoadingHistory(false)
+    }
+  }
 
   useEffect(() => {
-    if (!status?.start || status?.end) return undefined
+    loadHistory()
+  }, [session?.session])
 
-    const timer = setInterval(() => {
-      setTick((value) => value + 1)
-    }, 1000)
+  const year =
+    viewDate.getFullYear()
 
-    return () => clearInterval(timer)
-  }, [status?.start, status?.end])
+  const month =
+    viewDate.getMonth()
 
-  const year = viewDate.getFullYear()
-  const month = viewDate.getMonth()
-
-  const days = useMemo(
-    () => getCalendarDays(year, month),
+  const calendarDays = useMemo(
+    () =>
+      buildCalendar(
+        year,
+        month,
+      ),
     [year, month],
   )
 
   const summary = useMemo(
-    () => getMonthSummary(history, year, month),
+    () =>
+      getMonthlySummary(
+        history,
+        year,
+        month,
+      ),
     [history, year, month],
   )
 
-  const todayKey = toDateKey(now)
+  const todayKey = dateKey(now)
 
-  const selectedItem = selectedDate
-    ? getItemForDay(history, selectedDate)
-    : null
+  const selectedRecord =
+    selectedDate
+      ? getRecordForDay(
+          history,
+          selectedDate,
+        )
+      : null
 
-  const selectedDayObject = selectedDate
-    ? new Date(`${selectedDate}T00:00:00`)
-    : null
+  const selectedDateObject =
+    selectedDate
+      ? parseDate(selectedDate)
+      : null
 
-  const isWorking = Boolean(status?.start && !status?.end)
+  const isWorking =
+    Boolean(
+      status?.start &&
+        !status?.end,
+    )
 
   async function handleStart() {
-    if (starting || isWorking) return
+    if (starting) return
 
     setStarting(true)
 
     try {
       await onStart()
+      await loadHistory()
     } finally {
       setStarting(false)
     }
   }
 
   async function handleStop() {
-    if (stopping || !isWorking) return
+    if (stopping) return
 
     setStopping(true)
 
     try {
       await onStop()
+      await loadHistory()
     } finally {
       setStopping(false)
     }
@@ -267,40 +445,52 @@ export default function Home({
 
   function previousMonth() {
     setSelectedDate(null)
+
     setViewDate(
-      new Date(year, month - 1, 1),
+      new Date(
+        year,
+        month - 1,
+        1,
+      ),
     )
   }
 
   function nextMonth() {
     setSelectedDate(null)
+
     setViewDate(
-      new Date(year, month + 1, 1),
+      new Date(
+        year,
+        month + 1,
+        1,
+      ),
     )
   }
 
   return (
     <main className="screen app-screen home-calendar-screen">
       <BrandHeader
-        onMenu={onMenu}
         hideBack
+        onMenu={onMenu}
       />
 
       <section className="home-calendar-content">
 
         {/* Greeting */}
 
-        <div className="home-calendar-greeting">
+        <header className="home-calendar-greeting">
           <h1>
-            שלום, {session?.name || 'עובדת'} 👋
+            שלום, {session?.name || ''}
+            {' '}
+            👋
           </h1>
 
           <p>
-            {formatDateHebrew(now)}
+            {formatHebrewDate(now)}
           </p>
-        </div>
+        </header>
 
-        {/* Month navigation */}
+        {/* Month */}
 
         <div className="calendar-month-header">
           <button
@@ -313,7 +503,7 @@ export default function Home({
           </button>
 
           <h2>
-            {MONTH_NAMES[month]} {year}
+            {MONTHS[month]} {year}
           </h2>
 
           <button
@@ -330,26 +520,29 @@ export default function Home({
 
         <section
           className={`home-work-status ${
-            isWorking ? 'working' : ''
+            isWorking
+              ? 'working'
+              : 'not-working'
           }`}
         >
           {isWorking ? (
-            <>
-              <div className="work-status-heading">
-                <span className="working-dot" />
-                <strong>את עובדת עכשיו</strong>
-              </div>
+            <div className="work-status-row">
+              <div className="work-start-info">
+                <div className="work-clock-icon">
+                  ◷
+                </div>
 
-              <div className="work-start-text">
-                התחלת ב־{formatTime(status.start)}
-              </div>
+                <div>
+                  <span>
+                    התחלת עבודה
+                  </span>
 
-              <div className="live-work-time">
-                {formatLiveWorkTime(status.start, tick)}
-              </div>
-
-              <div className="live-work-label">
-                שעות עבודה
+                  <strong>
+                    {formatTime(
+                      status.start,
+                    )}
+                  </strong>
+                </div>
               </div>
 
               <button
@@ -359,18 +552,28 @@ export default function Home({
                 onClick={handleStop}
               >
                 <span className="stop-square" />
-                {stopping ? 'מסיימת...' : 'סיום עבודה'}
+                {stopping
+                  ? 'מסיימת...'
+                  : 'סיום עבודה'}
               </button>
-            </>
+            </div>
           ) : (
-            <>
-              <div className="work-status-heading">
-                <span className="clock-status-icon">◷</span>
-                <strong>עדיין לא התחלת עבודה</strong>
-              </div>
+            <div className="work-status-row">
+              <div className="work-start-info">
+                <div className="work-clock-icon">
+                  ◷
+                </div>
 
-              <div className="work-start-text">
-                השעה עכשיו {currentTime || '--:--'}
+                <div>
+                  <span>
+                    השעה עכשיו
+                  </span>
+
+                  <strong>
+                    {currentTime ||
+                      '--:--'}
+                  </strong>
+                </div>
               </div>
 
               <button
@@ -379,10 +582,11 @@ export default function Home({
                 disabled={starting}
                 onClick={handleStart}
               >
-                <span className="circle-icon">▶</span>
-                {starting ? 'מתחילה...' : 'התחל עבודה'}
+                {starting
+                  ? 'מתחילה...'
+                  : 'התחל עבודה'}
               </button>
-            </>
+            </div>
           )}
         </section>
 
@@ -394,8 +598,14 @@ export default function Home({
             className="quick-action absence"
             onClick={onAbsence}
           >
-            <span>☂</span>
-            <strong>הזנת היעדרות</strong>
+            <span className="quick-action-icon">
+              ☂
+            </span>
+
+            <strong>
+              הזנת היעדרות
+            </strong>
+
             <b>＋</b>
           </button>
 
@@ -404,90 +614,160 @@ export default function Home({
             className="quick-action manual"
             onClick={onManualHours}
           >
-            <span>▤</span>
-            <strong>הזנת שעות ידנית</strong>
+            <span className="quick-action-icon">
+              ▤
+            </span>
+
+            <strong>
+              הזנת שעות ידנית
+            </strong>
+
             <b>＋</b>
           </button>
         </div>
 
         {/* Monthly summary */}
 
-        <section className="monthly-summary">
-          <div className="summary-item">
-            <span className="summary-icon green">▣</span>
-            <strong>{summary.workDays}</strong>
-            <small>ימי עבודה</small>
-          </div>
+        <div className="monthly-summary-line">
+          <span>
+            <strong>
+              {summary.workDays}
+            </strong>
+            {' '}
+            ימי עבודה
+          </span>
 
-          <div className="summary-item">
-            <span className="summary-icon blue">◷</span>
-            <strong>{formatMinutes(summary.totalMinutes)}</strong>
-            <small>שעות עבודה</small>
-          </div>
+          <i />
 
-          <div className="summary-item">
-            <span className="summary-icon pink">☂</span>
-            <strong>{summary.vacationDays}</strong>
-            <small>חופשה</small>
-          </div>
+          <span>
+            <strong>
+              {formatMinutes(
+                summary.totalMinutes,
+              )}
+            </strong>
+            {' '}
+            שעות עבודה
+          </span>
 
-          <div className="summary-item">
-            <span className="summary-icon purple">♧</span>
-            <strong>{summary.sickDays}</strong>
-            <small>מחלה</small>
-          </div>
-        </section>
+          <i />
+
+          <span>
+            <strong>
+              {summary.vacationDays}
+            </strong>
+            {' '}
+            חופשה
+          </span>
+
+          <i />
+
+          <span>
+            <strong>
+              {summary.sickDays}
+            </strong>
+            {' '}
+            מחלה
+          </span>
+        </div>
 
         {/* Calendar */}
 
         <section className="attendance-calendar">
 
           <div className="calendar-weekdays">
-            {WEEK_DAYS.map((day) => (
-              <div key={day}>
-                {day}
-              </div>
-            ))}
+            {WEEK_DAYS.map(
+              (day) => (
+                <div key={day}>
+                  {day}
+                </div>
+              ),
+            )}
           </div>
 
           <div className="calendar-grid">
-            {days.map((day) => {
-              const item = getItemForDay(history, day.key)
-              const type = getDayType(item)
-              const isToday = day.key === todayKey
-              const isSelected = day.key === selectedDate
+            {calendarDays.map(
+              (day) => {
+                const record =
+                  getRecordForDay(
+                    history,
+                    day.key,
+                  )
 
-              return (
-                <button
-                  key={day.key}
-                  type="button"
-                  className={[
-                    'calendar-day',
-                    !day.currentMonth ? 'outside' : '',
-                    isToday ? 'today' : '',
-                    isSelected ? 'selected' : '',
-                    type,
-                  ].filter(Boolean).join(' ')}
-                  onClick={() => {
-                    if (day.currentMonth) {
-                      setSelectedDate(day.key)
-                    }
-                  }}
-                >
-                  <span className="calendar-day-number">
-                    {day.day}
-                  </span>
+                const type =
+                  getRecordType(
+                    record,
+                  )
 
-                  {type !== 'none' && (
-                    <span className={`calendar-day-dot ${type}`}>
-                      {type === 'vacation' && '☂'}
-                      {type === 'sick' && '♧'}
-                      {type === 'attendance' && ''}
+                const isToday =
+                  day.key ===
+                  todayKey
+
+                const isSelected =
+                  day.key ===
+                  selectedDate
+
+                return (
+                  <button
+                    key={day.key}
+                    type="button"
+                    className={[
+                      'calendar-day',
+                      !day.currentMonth
+                        ? 'outside'
+                        : '',
+                      isToday
+                        ? 'today'
+                        : '',
+                      isSelected
+                        ? 'selected'
+                        : '',
+                      type,
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                    onClick={() => {
+                      if (
+                        day.currentMonth
+                      ) {
+                        setSelectedDate(
+                          day.key,
+                        )
+                      }
+                    }}
+                  >
+                    <span className="calendar-day-number">
+                      {day.day}
                     </span>
-                  )}
-                </button>
-              )
-            })}
+
+                    {type ===
+                      'attendance' && (
+                      <span className="calendar-day-dot attendance" />
+                    )}
+
+                    {type ===
+                      'vacation' && (
+                      <span className="calendar-day-symbol vacation">
+                        ☂
+                      </span>
+                    )}
+
+                    {type ===
+                      'sick' && (
+                      <span className="calendar-day-symbol sick">
+                        ♧
+                      </span>
+                    )}
+
+                    {type ===
+                      'none' &&
+                      day.currentMonth &&
+                      day.key < todayKey && (
+                        <span className="calendar-day-dot none" />
+                      )}
+                  </button>
+                )
+              },
+            )}
           </div>
 
           <div className="calendar-legend">
@@ -513,6 +793,12 @@ export default function Home({
           </div>
         </section>
 
+        {loadingHistory && (
+          <div className="calendar-loading">
+            טוענת נתוני חודש...
+          </div>
+        )}
+
         {successMessage && (
           <div className="home-success-message">
             {successMessage}
@@ -525,16 +811,22 @@ export default function Home({
       {selectedDate && (
         <div
           className="calendar-day-backdrop"
-          onClick={() => setSelectedDate(null)}
+          onClick={() =>
+            setSelectedDate(null)
+          }
         >
           <section
             className="calendar-day-modal"
-            onClick={(event) => event.stopPropagation()}
+            onClick={(event) =>
+              event.stopPropagation()
+            }
           >
             <button
               type="button"
               className="calendar-day-close"
-              onClick={() => setSelectedDate(null)}
+              onClick={() =>
+                setSelectedDate(null)
+              }
               aria-label="סגירה"
             >
               ×
@@ -543,174 +835,143 @@ export default function Home({
             <div className="calendar-modal-handle" />
 
             <h2>
-              {selectedDayObject &&
-                new Intl.DateTimeFormat('he-IL', {
-                  day: 'numeric',
-                  month: 'long',
-                  year: 'numeric',
-                }).format(selectedDayObject)}
+              {selectedDateObject &&
+                new Intl.DateTimeFormat(
+                  'he-IL',
+                  {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                  },
+                ).format(
+                  selectedDateObject,
+                )}
             </h2>
 
-            <p className="calendar-modal-weekday">
-              {selectedDayObject &&
-                new Intl.DateTimeFormat('he-IL', {
-                  weekday: 'long',
-                }).format(selectedDayObject)}
-            </p>
-
-            {!selectedItem && (
+            {!selectedRecord && (
               <div className="calendar-empty-day">
                 <span>○</span>
-                <strong>אין דיווח ביום זה</strong>
+                <strong>
+                  אין דיווח ביום זה
+                </strong>
               </div>
             )}
 
-            {selectedItem?.source !== 'absence' && selectedItem && (
-              <>
-                <div className="calendar-attendance-summary">
-                  <div className="calendar-attendance-icon">
-                    ▣
-                  </div>
-
-                  <div>
-                    <strong>נוכחות</strong>
-
-                    <div>
-                      {formatTime(selectedItem.start)}
-                      {' – '}
-                      {formatTime(selectedItem.end)}
-                    </div>
-
-                    <small>
-                      {selectedItem.total || '—'} שעות
-                    </small>
-                  </div>
-                </div>
-
-                <div className="calendar-detail-list">
-                  <div>
-                    <span>◷</span>
-                    <span>כניסה</span>
-                    <strong>
-                      {formatTime(selectedItem.start) || '—'}
-                    </strong>
-                  </div>
-
-                  <div>
-                    <span>◷</span>
-                    <span>יציאה</span>
-                    <strong>
-                      {formatTime(selectedItem.end) || '—'}
-                    </strong>
-                  </div>
-
-                  <div>
-                    <span>◴</span>
-                    <span>סה״כ שעות</span>
-                    <strong>
-                      {selectedItem.total || '—'}
-                    </strong>
-                  </div>
-                </div>
-
-                <div className="calendar-modal-note">
-                  <span>▤</span>
-
-                  <div>
-                    <strong>הערה</strong>
-                    <p>
-                      {selectedItem.note || 'אין הערה'}
-                    </p>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  className="calendar-edit-button"
-                  onClick={() => {
-                    setSelectedDate(null)
-                    // ניתן לחבר כאן לעריכה בהמשך
-                  }}
-                >
-                  ✎ עריכת רשומה
-                </button>
-              </>
-            )}
-
-            {selectedItem?.source === 'absence' && (
-              <>
-                <div className="calendar-absence-summary">
-                  <div className="calendar-absence-icon">
-                    {selectedItem.absenceType === 'מחלה'
-                      ? '♧'
-                      : '☂'}
-                  </div>
-
-                  <div>
-                    <strong>
-                      {selectedItem.absenceType || 'היעדרות'}
-                    </strong>
-
+            {selectedRecord &&
+              selectedRecord.source !==
+                'absence' && (
+                <div className="calendar-detail-card attendance-detail">
+                  <div className="detail-title">
                     <span>
-                      יום שלם
+                      ●
                     </span>
+
+                    <strong>
+                      נוכחות
+                    </strong>
                   </div>
-                </div>
 
-                <div className="calendar-modal-note">
-                  <span>▤</span>
+                  <div className="detail-row">
+                    <span>
+                      שעת התחלה
+                    </span>
 
-                  <div>
-                    <strong>הערה</strong>
-                    <p>
-                      {selectedItem.note || 'אין הערה'}
-                    </p>
+                    <strong>
+                      {formatTime(
+                        selectedRecord.start,
+                      ) || '—'}
+                    </strong>
                   </div>
-                </div>
 
-                <button
-                  type="button"
-                  className="calendar-edit-button"
-                  onClick={() => {
-                    setSelectedDate(null)
-                  }}
-                >
-                  ✎ עריכת רשומה
-                </button>
-              </>
-            )}
+                  <div className="detail-row">
+                    <span>
+                      שעת סיום
+                    </span>
+
+                    <strong>
+                      {formatTime(
+                        selectedRecord.end,
+                      ) || '—'}
+                    </strong>
+                  </div>
+
+                  <div className="detail-row">
+                    <span>
+                      סה״כ
+                    </span>
+
+                    <strong>
+                      {selectedRecord.total ||
+                        '—'}
+                    </strong>
+                  </div>
+
+                  {selectedRecord.note && (
+                    <div className="detail-note">
+                      {selectedRecord.note}
+                    </div>
+                  )}
+                </div>
+              )}
+
+            {selectedRecord &&
+              selectedRecord.source ===
+                'absence' && (
+                <div className="calendar-detail-card absence-detail">
+                  <div className="detail-title">
+                    <span>
+                      {selectedRecord.absenceType ===
+                      'מחלה'
+                        ? '♧'
+                        : '☂'}
+                    </span>
+
+                    <strong>
+                      {selectedRecord.absenceType ||
+                        'היעדרות'}
+                    </strong>
+                  </div>
+
+                  <div className="detail-row">
+                    <span>
+                      מתאריך
+                    </span>
+
+                    <strong>
+                      {selectedRecord.from
+                        ? selectedRecord.from
+                            .split('-')
+                            .reverse()
+                            .join('/')
+                        : '—'}
+                    </strong>
+                  </div>
+
+                  <div className="detail-row">
+                    <span>
+                      עד תאריך
+                    </span>
+
+                    <strong>
+                      {selectedRecord.to
+                        ? selectedRecord.to
+                            .split('-')
+                            .reverse()
+                            .join('/')
+                        : '—'}
+                    </strong>
+                  </div>
+
+                  {selectedRecord.note && (
+                    <div className="detail-note">
+                      {selectedRecord.note}
+                    </div>
+                  )}
+                </div>
+              )}
           </section>
         </div>
       )}
     </main>
   )
-}
-
-function formatLiveWorkTime(start, tick) {
-  void tick
-
-  if (!start) return '00:00'
-
-  const [hours, minutes] = String(start)
-    .split(':')
-    .map(Number)
-
-  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) {
-    return '00:00'
-  }
-
-  const startDate = new Date()
-  startDate.setHours(hours, minutes, 0, 0)
-
-  const now = new Date()
-  let diff = Math.floor(
-    (now.getTime() - startDate.getTime()) / 60000,
-  )
-
-  if (diff < 0) diff += 24 * 60
-
-  const elapsedHours = Math.floor(diff / 60)
-  const elapsedMinutes = diff % 60
-
-  return `${pad(elapsedHours)}:${pad(elapsedMinutes)}`
 }
