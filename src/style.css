@@ -1460,3 +1460,151 @@ button:disabled {
 .calendar-editor-actions button:last-child { background: #173456; color: #fff; }
 .calendar-editor-actions button:disabled { opacity: .6; }
 .calendar-editor-error { background: #fff0f1; color: #c93045; border-radius: 12px; padding: 10px 12px; font-weight: 700; }
+
+
+/* ===== Home action layout + message popup ===== */
+.home-work-status .work-status-row {
+  direction: ltr;
+  min-height: 76px;
+}
+
+.home-entry-actions {
+  width: 112px;
+  min-width: 112px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  direction: rtl;
+}
+
+.home-entry-button {
+  width: 100%;
+  height: 34px;
+  border: 0;
+  border-radius: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 850;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.home-entry-button span {
+  font-size: 17px;
+  line-height: 1;
+}
+
+.home-entry-button.hours {
+  background: #eaf3ff;
+  color: #1767c4;
+}
+
+.home-entry-button.absence {
+  background: #ffe9ed;
+  color: #e83e5a;
+}
+
+.home-work-status .work-start-info {
+  direction: rtl;
+  flex: 1;
+  justify-content: center;
+}
+
+.app-message-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+  background: rgba(23, 52, 86, 0.28);
+  backdrop-filter: blur(5px);
+}
+
+.app-message-modal {
+  width: min(360px, 100%);
+  padding: 26px 22px 20px;
+  border-radius: 25px;
+  background: #fff;
+  box-shadow: 0 22px 60px rgba(20, 45, 70, 0.22);
+  text-align: center;
+  direction: rtl;
+}
+
+.app-message-icon {
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 12px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #ffe9ed;
+  color: #e83e5a;
+  font-size: 27px;
+  font-weight: 900;
+}
+
+.app-message-modal h2 {
+  margin: 0 0 8px;
+  color: #173456;
+  font-size: 21px;
+  font-weight: 900;
+}
+
+.app-message-modal p {
+  margin: 0;
+  color: #5d6975;
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.app-message-modal .app-message-extra {
+  margin-top: 7px;
+  color: #173456;
+}
+
+.app-message-modal > button {
+  width: 100%;
+  margin-top: 18px;
+  border: 0;
+  border-radius: 15px;
+  padding: 13px;
+  background: #173456;
+  color: #fff;
+  font: inherit;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+@media (max-width: 430px) {
+  .home-entry-actions {
+    width: 98px;
+    min-width: 98px;
+  }
+  .home-entry-button {
+    font-size: 11px;
+    gap: 5px;
+  }
+  .home-work-status .start-work-button,
+  .home-work-status .stop-work-button {
+    width: 128px;
+    min-width: 128px;
+    font-size: 15px;
+  }
+  .home-work-status .work-start-info {
+    gap: 7px;
+  }
+  .home-work-status .work-clock-icon {
+    width: 43px;
+    height: 43px;
+    flex-basis: 43px;
+    font-size: 25px;
+  }
+  .home-work-status .work-start-info strong {
+    font-size: 20px;
+  }
+}

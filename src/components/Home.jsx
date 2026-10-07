@@ -133,10 +133,9 @@ export default function Home({
   error,
   successMessage,
   onCloseSuccess,
+  onCloseError,
   onStart,
   onEnd,
-  onHistory,
-  onAbsence,
   onMenu,
 }) {
   const now = new Date()
@@ -215,6 +214,18 @@ export default function Home({
     setEditorError('')
   }
 
+  function openNewManualToday() {
+    setSelectedDay(todayKey)
+    setEditor({ mode: 'manual', source: 'new', data: emptyManual(todayKey) })
+    setEditorError('')
+  }
+
+  function openNewAbsenceToday() {
+    setSelectedDay(todayKey)
+    setEditor({ mode: 'absence', source: 'new', data: emptyAbsence(todayKey) })
+    setEditorError('')
+  }
+
   function openEdit(item) {
     if (item.source === 'absence') {
       setEditor({ mode: 'absence', source: 'edit', recordId: item.id, data: { type: item.absenceType || 'חופשה', from: item.from || selectedDay, to: item.to || selectedDay, note: item.note || '' } })
@@ -269,34 +280,37 @@ export default function Home({
         </div>
 
         <section className={`home-work-status ${working ? '' : 'not-working'}`}>
-          {working ? (
-            <div className="work-status-row">
-              <div className="work-start-info">
-                <div className="work-clock-icon">◷</div>
-                <div><span>התחלת עבודה</span><strong>{statusLoading ? '…' : status.start}</strong></div>
+          <div className="work-status-row">
+            <div className="home-entry-actions">
+              <button type="button" className="home-entry-button hours" onClick={openNewManualToday}>
+                <span>▣</span><strong>הזנת שעות</strong>
+              </button>
+              <button type="button" className="home-entry-button absence" onClick={openNewAbsenceToday}>
+                <span>♥</span><strong>הזנת היעדרות</strong>
+              </button>
+            </div>
+
+            <div className="work-start-info">
+              <div className="work-clock-icon">◷</div>
+              <div>
+                <span>{working ? 'התחלת עבודה' : 'שעת התחלה'}</span>
+                <strong>{statusLoading ? '…' : working ? status.start : 'טרם התחלת'}</strong>
               </div>
+            </div>
+
+            {working ? (
               <button type="button" className="stop-work-button" onClick={onEnd} disabled={loading}>
                 <span className="stop-square" />{loading ? 'מסיים…' : 'סיום עבודה'}
               </button>
-            </div>
-          ) : (
-            <button type="button" className="start-work-button start-work-button-full" onClick={onStart} disabled={loading || statusLoading}>
-              {loading ? 'מתחילה…' : 'התחל עבודה'}
-            </button>
-          )}
+            ) : (
+              <button type="button" className="start-work-button" onClick={onStart} disabled={loading || statusLoading}>
+                {loading ? 'מתחילה…' : 'התחל עבודה'}
+              </button>
+            )}
+          </div>
         </section>
 
-        {error && <div className="error">{error}</div>}
         {successMessage && <button type="button" className="home-success-message" onClick={onCloseSuccess}>{successMessage}</button>}
-
-        <div className="home-quick-actions">
-          <button type="button" className="quick-action absence" onClick={onAbsence}>
-            <span className="quick-action-icon">♥</span><strong>הזנת היעדרות</strong><b>‹</b>
-          </button>
-          <button type="button" className="quick-action manual" onClick={onHistory}>
-            <span className="quick-action-icon">▣</span><strong>היסטוריית דיווחים</strong><b>‹</b>
-          </button>
-        </div>
 
         <div className="monthly-summary-line">
           <span><strong>{monthAttendance.days}</strong> ימי עבודה</span><i /><span><strong>{formatMinutes(monthAttendance.totalMinutes)}</strong> שעות</span><i /><span><strong>{vacationDays}</strong> חופשה</span><i /><span><strong>{sickDays}</strong> מחלה</span>
@@ -332,6 +346,20 @@ export default function Home({
           {!historyLoading && historyError && <div className="calendar-loading">{historyError}</div>}
         </section>
       </section>
+
+      {error && (
+        <div className="app-message-backdrop" onClick={() => {}}>
+          <section className="app-message-modal error-modal" onClick={event => event.stopPropagation()}>
+            <div className="app-message-icon">!</div>
+            <h2>לא ניתן להתחיל עבודה</h2>
+            <p>{error}</p>
+            {error === 'כבר התחלת עבודה היום' && status?.start && (
+              <p className="app-message-extra">שעת ההתחלה שלך היום: <strong>{status.start}</strong></p>
+            )}
+            <button type="button" onClick={onCloseError}>הבנתי</button>
+          </section>
+        </div>
+      )}
 
       {selectedDay && (
         <div className="calendar-day-backdrop" onClick={() => setSelectedDay(null)}>

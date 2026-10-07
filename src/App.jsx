@@ -159,14 +159,17 @@ export default function App() {
       cacheStatus(session.employeeId, nextStatus)
       setScreen('home')
     } catch (requestError) {
-      setError(
-        requestError.message === 'ALREADY_STARTED'
-          ? 'כבר התחלת עבודה היום'
-          : 'לא ניתן להתחיל את העבודה',
-      )
-
       if (requestError.message === 'ALREADY_STARTED') {
-        refreshStatus(session)
+        await refreshStatus(session)
+        setError('כבר התחלת עבודה היום')
+      } else {
+        setError(
+          requestError.message === 'SESSION_EXPIRED'
+            ? 'החיבור פג. התחברי מחדש.'
+            : requestError.message === 'NETWORK' || requestError.message === 'TIMEOUT'
+              ? 'לא ניתן להתחבר לשרת כרגע.'
+              : 'לא ניתן להתחיל את העבודה.',
+        )
       }
     } finally {
       setLoading(false)
@@ -218,6 +221,10 @@ export default function App() {
     setSuccessMessage('')
   }
 
+  function closeErrorMessage() {
+    setError('')
+  }
+
   function logout() {
     clearSession()
     setSession(null)
@@ -251,10 +258,9 @@ export default function App() {
         error={error}
         successMessage={successMessage}
         onCloseSuccess={closeSuccessMessage}
+        onCloseError={closeErrorMessage}
         onStart={startWork}
         onEnd={endWork}
-        onHistory={() => setScreen('history')}
-        onAbsence={() => setScreen('leave')}
         onMenu={openMenu}
       />
     )

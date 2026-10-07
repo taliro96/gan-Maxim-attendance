@@ -1,5 +1,5 @@
 const API_URL =
-  'https://script.google.com/macros/s/AKfycbwWe8PII7WZgBDWFlFgl59qz19bobEEjdW4lNIUSMGAkrWvYItJtXlO4KlY9ATTv-D8/exec'
+  'https://script.google.com/macros/s/AKfycbzRvEd0zJHiBgDBJWqcMJ7VVwyIxjeVxpS6wg8o3p9jNC0THFSzdfkhHo2pSYFvZVW_/exec'
 
 export async function api(action, params = {}) {
   const query = new URLSearchParams({
