@@ -37,17 +37,17 @@ export default function History({ session, onBack, onMenu }) {
   }, [session])
 
   return (
-    <main className="screen app-screen history-screen">
+    <main className="screen app-screen">
       <BrandHeader
         onBack={onBack}
         onMenu={onMenu}
       />
 
-      <section className="page-content history-content">
+      <section className="page-content">
         <h1 className="page-title">היסטוריה</h1>
 
         {loading && (
-          <div className="empty">
+          <div className="history-loading">
             טוענת...
           </div>
         )}
@@ -59,7 +59,7 @@ export default function History({ session, onBack, onMenu }) {
         )}
 
         {!loading && !error && items.length === 0 && (
-          <div className="empty">
+          <div className="history-loading">
             אין נתונים להצגה
           </div>
         )}
@@ -67,34 +67,28 @@ export default function History({ session, onBack, onMenu }) {
         {!loading && !error && items.length > 0 && (
           <div className="history-list">
             {items.map((item, index) => (
-              <article
-                className="history-card"
+              <div
+                className="history-item"
                 key={item.id || index}
               >
-                <div className="history-card-top">
-                  <div className="history-date">
-                    {item.date || '—'}
-                  </div>
-
-                  <div className="history-type">
+                <div className="history-day">
+                  <strong>{item.date || '—'}</strong>
+                  <span>
                     {item.reportType || 'נוכחות'}
-                  </div>
+                  </span>
                 </div>
 
-                <div className="history-card-bottom">
-                  <div className="history-time">
-                    <span>{item.start || '—'}</span>
-                    <span className="history-dash">–</span>
-                    <span>{item.end || '—'}</span>
-                  </div>
+                <span className="history-status-dot" />
 
-                  {item.total && (
-                    <div className="history-total">
-                      {item.total}
-                    </div>
-                  )}
+                <div className="history-times">
+                  <span>{item.start || '—'}</span>
+                  <span>{item.end || '—'}</span>
                 </div>
-              </article>
+
+                <div className="history-total">
+                  {item.total || ''}
+                </div>
+              </div>
             ))}
           </div>
         )}
