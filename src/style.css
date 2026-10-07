@@ -1409,3 +1409,54 @@ button:disabled {
     height: 52px;
   }
 }
+
+/* Home v2: start-only state + calendar day editor */
+.start-work-button-full {
+  width: 100%;
+  min-height: 76px;
+  border-radius: 28px;
+}
+.home-work-status.not-working {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.calendar-add-title {
+  margin: 18px 0 10px;
+  text-align: center;
+  font-weight: 800;
+  color: #172f50;
+}
+.calendar-add-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.calendar-add-button,
+.calendar-edit-button {
+  border: 0;
+  border-radius: 16px;
+  padding: 13px 14px;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+.calendar-add-button.hours { background: #eaf3ff; color: #1767c4; }
+.calendar-add-button.absence { background: #ffe9ed; color: #e83e5a; }
+.calendar-edit-button { width: 100%; margin-top: 12px; background: #f5f7fa; color: #173456; }
+.calendar-editor { display: flex; flex-direction: column; gap: 12px; }
+.calendar-editor-title { font-size: 20px; font-weight: 900; color: #173456; margin-bottom: 2px; }
+.calendar-editor label { display: flex; flex-direction: column; gap: 6px; color: #4a5a6c; font-weight: 700; }
+.calendar-editor input,
+.calendar-editor select,
+.calendar-editor textarea {
+  width: 100%; box-sizing: border-box; border: 1px solid #dce3ea; background: #fff; border-radius: 14px; padding: 12px; font: inherit; color: #173456;
+}
+.calendar-editor textarea { min-height: 70px; resize: vertical; }
+.calendar-editor-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.calendar-editor-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px; }
+.calendar-editor-actions button { border: 0; border-radius: 15px; padding: 13px; font: inherit; font-weight: 800; cursor: pointer; }
+.calendar-editor-actions button:first-child { background: #f1f3f6; color: #425267; }
+.calendar-editor-actions button:last-child { background: #173456; color: #fff; }
+.calendar-editor-actions button:disabled { opacity: .6; }
+.calendar-editor-error { background: #fff0f1; color: #c93045; border-radius: 12px; padding: 10px 12px; font-weight: 700; }
