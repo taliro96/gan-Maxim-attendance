@@ -51,15 +51,6 @@ export default function App() {
     else setStatusLoading(false)
   }, [session])
 
-  useEffect(() => {
-    if (!successMessage) return undefined
-
-    const timer = setTimeout(() => {
-      setSuccessMessage('')
-    }, 2500)
-
-    return () => clearTimeout(timer)
-  }, [successMessage])
 
   async function refreshStatus(current = session) {
     if (!current?.employeeId) {
@@ -223,6 +214,10 @@ export default function App() {
     setSuccessMessage('ההיעדרות נשמרה בהצלחה ✓')
   }
 
+  function closeSuccessMessage() {
+    setSuccessMessage('')
+  }
+
   function logout() {
     clearSession()
     setSession(null)
@@ -255,6 +250,7 @@ export default function App() {
         loading={loading}
         error={error}
         successMessage={successMessage}
+        onCloseSuccess={closeSuccessMessage}
         onStart={startWork}
         onEnd={endWork}
         onHistory={() => setScreen('history')}
