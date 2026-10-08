@@ -47,6 +47,22 @@ export default function App() {
   const statusRequestRef = useRef(0)
 
   useEffect(() => {
+    function handleSessionExpired() {
+      clearSession()
+      setSession(null)
+      setStatus(null)
+      setStatusLoading(false)
+      setLoading(false)
+      setSuccessMessage('')
+      setError('')
+      setScreen('welcome')
+    }
+
+    window.addEventListener('gan-session-expired', handleSessionExpired)
+    return () => window.removeEventListener('gan-session-expired', handleSessionExpired)
+  }, [])
+
+  useEffect(() => {
     if (session) refreshStatus(session)
     else setStatusLoading(false)
   }, [session])
@@ -79,7 +95,11 @@ export default function App() {
         setError('')
         setStatusLoading(false)
         return
-      } catch {
+      } catch (requestError) {
+        if (requestError.message === 'SESSION_EXPIRED') {
+          return
+        }
+
         if (requestId !== statusRequestRef.current) return
 
         if (attempt < maxAttempts) {

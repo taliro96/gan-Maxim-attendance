@@ -1,5 +1,5 @@
 const API_URL =
-  'https://script.google.com/macros/s/AKfycbxlivK0mTC1VcO22ZIJrLxwDFoEkxXvCnccDGs_q994fSJ_xyo2rSRT-zGXYLHKEEs1/exec'
+  'https://script.google.com/macros/s/AKfycbzRvEd0zJHiBgDBJWqcMJ7VVwyIxjeVxpS6wg8o3p9jNC0THFSzdfkhHo2pSYFvZVW_/exec'
 
 export async function api(action, params = {}) {
   const query = new URLSearchParams({
@@ -27,6 +27,11 @@ export async function api(action, params = {}) {
     throw new Error(data?.error || 'API_ERROR')
   } catch (error) {
     if (error?.name === 'AbortError') throw new Error('TIMEOUT')
+
+    if (error?.message === 'SESSION_EXPIRED') {
+      window.dispatchEvent(new Event('gan-session-expired'))
+      throw error
+    }
 
     if ([
       'API_ERROR',
