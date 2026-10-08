@@ -1334,7 +1334,9 @@ button:disabled {
 }
 .calendar-add-button.hours { background: #eaf3ff; color: #1767c4; }
 .calendar-add-button.absence { background: #ffe9ed; color: #e83e5a; }
-.calendar-edit-button { width: 100%; margin-top: 12px; background: #f5f7fa; color: #173456; }
+.calendar-detail-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+.calendar-edit-button { width: 100%; margin-top: 0; background: #f5f7fa; color: #173456; }
+.calendar-delete-button { width: 100%; margin-top: 0; border: 0; border-radius: 16px; padding: 13px 14px; background: #fff0f2; color: #d93e57; font: inherit; font-weight: 800; }
 .calendar-editor { display: flex; flex-direction: column; gap: 12px; }
 .calendar-editor-title { font-size: 20px; font-weight: 900; color: #173456; }
 .calendar-editor label { display: flex; flex-direction: column; gap: 6px; color: #4a5a6c; font-weight: 700; }
@@ -1424,3 +1426,34 @@ button:disabled {
   .monthly-summary-line small { font-size: 9px; }
   .calendar-day { height: 56px; }
 }
+
+
+.calendar-delete-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+  background: rgba(24, 38, 58, .38);
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+}
+
+.calendar-delete-modal {
+  width: min(100%, 390px);
+  padding: 24px 20px 20px;
+  border-radius: 27px;
+  background: #fffaf5;
+  box-shadow: 0 25px 65px rgba(0, 0, 0, .22);
+  text-align: center;
+}
+
+.calendar-delete-modal h2 { margin: 10px 0 6px; color: #17243d; font-size: 24px; font-weight: 900; }
+.calendar-delete-modal p { margin: 0 0 8px; color: #5e6875; font-size: 15px; font-weight: 700; }
+.calendar-delete-warning { color: #8b7474 !important; font-weight: 600 !important; }
+.calendar-delete-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 18px; }
+.calendar-delete-actions button { border: 0; border-radius: 15px; padding: 13px; font: inherit; font-weight: 800; }
+.calendar-delete-actions button:first-child { background: #eef1f4; color: #425267; }
+.calendar-delete-actions .danger { background: #e94b62; color: #fff; }
+.calendar-delete-actions button:disabled { opacity: .6; }

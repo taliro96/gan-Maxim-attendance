@@ -147,6 +147,9 @@ export default function Home({
   const [editor, setEditor] = useState(null)
   const [editorSaving, setEditorSaving] = useState(false)
   const [editorError, setEditorError] = useState('')
+  const [deleteTarget, setDeleteTarget] = useState(null)
+  const [deleteSaving, setDeleteSaving] = useState(false)
+  const [deleteError, setDeleteError] = useState('')
 
   async function loadHistory() {
     if (!session?.session) return
@@ -233,6 +236,34 @@ export default function Home({
       setEditor({ mode: 'manual', source: 'edit', recordId: item.id, data: { date: item.date || selectedDay, start: item.start || '', end: item.end || '', note: item.note || '' } })
     }
     setEditorError('')
+  }
+
+
+  function requestDelete(item) {
+    setDeleteTarget(item)
+    setDeleteError('')
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget || deleteSaving) return
+    setDeleteSaving(true)
+    setDeleteError('')
+    try {
+      await api('deleteHistory', {
+        session: session.session,
+        employeeId: session.employeeId,
+        recordId: deleteTarget.id,
+        source: deleteTarget.source,
+      })
+      setDeleteTarget(null)
+      await loadHistory()
+    } catch (requestError) {
+      setDeleteError(requestError.message === 'HISTORY_RECORD_NOT_FOUND'
+        ? 'הדיווח כבר לא קיים בגיליון.'
+        : 'לא ניתן למחוק את הדיווח כרגע.')
+    } finally {
+      setDeleteSaving(false)
+    }
   }
 
   function updateEditor(patch) {
@@ -398,6 +429,22 @@ export default function Home({
         </div>
       )}
 
+      {deleteTarget && (
+        <div className="calendar-delete-backdrop" onClick={() => !deleteSaving && setDeleteTarget(null)}>
+          <section className="calendar-delete-modal" onClick={event => event.stopPropagation()}>
+            <div className="app-message-icon">!</div>
+            <h2>למחוק את הדיווח?</h2>
+            <p>{deleteTarget.source === 'absence' ? (deleteTarget.absenceType || 'היעדרות') : 'שעות עבודה'}</p>
+            <p className="calendar-delete-warning">הדיווח יימחק מהגיליון ולא יופיע יותר בלוח השנה.</p>
+            {deleteError && <div className="calendar-editor-error">{deleteError}</div>}
+            <div className="calendar-delete-actions">
+              <button type="button" onClick={() => setDeleteTarget(null)} disabled={deleteSaving}>ביטול</button>
+              <button type="button" className="danger" onClick={confirmDelete} disabled={deleteSaving}>{deleteSaving ? 'מוחקת…' : 'כן, למחוק'}</button>
+            </div>
+          </section>
+        </div>
+      )}
+
       {selectedDay && (
         <div className="calendar-day-backdrop" onClick={() => setSelectedDay(null)}>
           <section className="calendar-day-modal" onClick={event => event.stopPropagation()}>
@@ -426,7 +473,7 @@ export default function Home({
                         {item.note && <div className="detail-note">{item.note}</div>}
                       </>
                     )}
-                    <button type="button" className="calendar-edit-button" onClick={() => openEdit(item)}>עריכה</button>
+                    <div className="calendar-detail-actions"><button type="button" className="calendar-edit-button" onClick={() => openEdit(item)}>עריכה</button><button type="button" className="calendar-delete-button" onClick={() => requestDelete(item)}>מחיקה</button></div>
                   </article>
                 ))}
 

@@ -1,5 +1,5 @@
 const API_URL =
-  'https://script.google.com/macros/s/AKfycbyasHf17Sf7TB2DC4aDX5CNDZLK9z2WvWfbXkA976EGthaBYgkGHqyNuEjSvaGGESVw/exec'
+  'https://script.google.com/macros/s/AKfycbxlivK0mTC1VcO22ZIJrLxwDFoEkxXvCnccDGs_q994fSJ_xyo2rSRT-zGXYLHKEEs1/exec'
 
 export async function api(action, params = {}) {
   const query = new URLSearchParams({
@@ -40,6 +40,7 @@ export async function api(action, params = {}) {
       'INVALID_ABSENCE_DATA',
       'INVALID_HISTORY_UPDATE',
       'HISTORY_RECORD_NOT_FOUND',
+      'INVALID_HISTORY_DELETE',
       'ABSENCES_SHEET_MISSING',
     ].includes(error?.message)) {
       throw error
