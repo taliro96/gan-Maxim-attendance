@@ -273,57 +273,83 @@ export default function Home({
   return (
     <main className="screen app-screen home-calendar-screen">
       <BrandHeader onMenu={onMenu} hideBack />
+
       <section className="home-calendar-content">
         <div className="home-calendar-greeting">
           <h1>שלום, {session?.name || ''} 👋</h1>
           <p>הנוכחות שלך במקום אחד</p>
         </div>
 
-        <section className={`home-work-status ${working ? '' : 'not-working'}`}>
-          <div className="work-status-row">
-            <div className="home-entry-actions">
-              <button type="button" className="home-entry-button hours" onClick={openNewManualToday}>
-                <span>▣</span><strong>הזנת שעות</strong>
-              </button>
-              <button type="button" className="home-entry-button absence" onClick={openNewAbsenceToday}>
-                <span>♥</span><strong>הזנת היעדרות</strong>
-              </button>
-            </div>
-
-            <div className="work-start-info">
-              <div className="work-clock-icon">◷</div>
-              <div>
-                <span>{working ? 'התחלת עבודה' : 'שעת התחלה'}</span>
-                <strong>{statusLoading ? '…' : working ? status.start : 'טרם התחלת'}</strong>
+        <section className={`work-card ${working ? 'is-working' : ''}`}>
+          {!working ? (
+            <button
+              type="button"
+              className="start-work-button"
+              onClick={onStart}
+              disabled={loading || statusLoading}
+            >
+              <span className="play-icon" aria-hidden="true">▶</span>
+              {loading ? 'מתחילה…' : 'התחל עבודה'}
+            </button>
+          ) : (
+            <div className="active-work-row">
+              <div className="active-work-info">
+                <span>התחלת עבודה</span>
+                <strong>{status.start}</strong>
               </div>
+              <button
+                type="button"
+                className="stop-work-button"
+                onClick={onEnd}
+                disabled={loading}
+              >
+                <span className="stop-square" aria-hidden="true" />
+                {loading ? 'מסיים…' : 'סיום עבודה'}
+              </button>
             </div>
-
-            {working ? (
-              <button type="button" className="stop-work-button" onClick={onEnd} disabled={loading}>
-                <span className="stop-square" />{loading ? 'מסיים…' : 'סיום עבודה'}
-              </button>
-            ) : (
-              <button type="button" className="start-work-button" onClick={onStart} disabled={loading || statusLoading}>
-                {loading ? 'מתחילה…' : 'התחל עבודה'}
-              </button>
-            )}
-          </div>
+          )}
         </section>
 
-        {successMessage && <button type="button" className="home-success-message" onClick={onCloseSuccess}>{successMessage}</button>}
+        <div className="home-action-cards">
+          <button type="button" className="home-action-card manual" onClick={openNewManualToday}>
+            <span className="home-action-icon file-icon" aria-hidden="true">▤</span>
+            <strong>הזנת שעות</strong>
+            <span className="home-action-plus" aria-hidden="true">+</span>
+          </button>
+          <button type="button" className="home-action-card absence" onClick={openNewAbsenceToday}>
+            <span className="home-action-icon umbrella-icon" aria-hidden="true">☂</span>
+            <strong>הזנת היעדרות</strong>
+            <span className="home-action-plus" aria-hidden="true">+</span>
+          </button>
+        </div>
+
+        {successMessage && (
+          <button type="button" className="home-success-message" onClick={onCloseSuccess}>
+            {successMessage}
+          </button>
+        )}
 
         <div className="monthly-summary-line">
-          <span><strong>{monthAttendance.days}</strong> ימי עבודה</span><i /><span><strong>{formatMinutes(monthAttendance.totalMinutes)}</strong> שעות</span><i /><span><strong>{vacationDays}</strong> חופשה</span><i /><span><strong>{sickDays}</strong> מחלה</span>
+          <span><strong>{monthAttendance.days}</strong><small>ימי עבודה</small></span>
+          <i />
+          <span><strong>{formatMinutes(monthAttendance.totalMinutes)}</strong><small>שעות עבודה</small></span>
+          <i />
+          <span><strong>{vacationDays}</strong><small>חופשה</small></span>
+          <i />
+          <span><strong>{sickDays}</strong><small>מחלה</small></span>
         </div>
 
-        <div className="calendar-month-header">
-          <button type="button" className="calendar-arrow" onClick={() => moveMonth(-1)} aria-label="חודש קודם">‹</button>
-          <h2>{monthTitle(monthDate)}</h2>
-          <button type="button" className="calendar-arrow" onClick={() => moveMonth(1)} aria-label="חודש הבא">›</button>
-        </div>
+        <section className="calendar-shell" aria-label="לוח נוכחות חודשי">
+          <div className="calendar-month-header">
+            <button type="button" className="calendar-arrow" onClick={() => moveMonth(-1)} aria-label="חודש קודם">‹</button>
+            <h2>{monthTitle(monthDate)}</h2>
+            <button type="button" className="calendar-arrow" onClick={() => moveMonth(1)} aria-label="חודש הבא">›</button>
+          </div>
 
-        <section className="attendance-calendar" aria-label="לוח נוכחות חודשי">
-          <div className="calendar-weekdays">{WEEKDAYS.map(day => <div key={day}>{day}</div>)}</div>
+          <div className="calendar-weekdays">
+            {WEEKDAYS.map(day => <div key={day}>{day}</div>)}
+          </div>
+
           <div className="calendar-grid">
             {cells.map(cell => {
               const records = recordsByDay.get(cell.key) || []
@@ -331,27 +357,38 @@ export default function Home({
               const isToday = cell.key === todayKey
               const isSelected = cell.key === selectedDay
               return (
-                <button key={cell.key} type="button" className={`calendar-day ${cell.outside ? 'outside' : ''} ${kind} ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''}`} onClick={() => openDay(cell.key)}>
+                <button
+                  key={cell.key}
+                  type="button"
+                  className={`calendar-day ${cell.outside ? 'outside' : ''} ${kind} ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''}`}
+                  onClick={() => openDay(cell.key)}
+                >
                   <span className="calendar-day-number">{cell.day}</span>
                   {kind === 'attendance' && <span className="calendar-day-dot attendance" />}
                   {kind === 'none' && !cell.outside && <span className="calendar-day-dot none" />}
-                  {kind === 'vacation' && <span className="calendar-day-symbol vacation">♥</span>}
+                  {kind === 'vacation' && <span className="calendar-day-symbol vacation">☂</span>}
                   {kind === 'sick' && <span className="calendar-day-symbol sick">✚</span>}
                 </button>
               )
             })}
           </div>
-          <div className="calendar-legend"><span><i className="legend-dot attendance" /> נוכחות</span><span><i className="legend-dot vacation" /> חופשה</span><span><i className="legend-dot sick" /> מחלה</span><span><i className="legend-dot none" /> ללא דיווח</span></div>
+
+          <div className="calendar-legend">
+            <span><i className="legend-dot attendance" /> נוכחות</span>
+            <span><i className="legend-symbol vacation">☂</i> חופשה</span>
+            <span><i className="legend-symbol sick">✚</i> מחלה</span>
+            <span><i className="legend-dot none" /> ללא דיווח</span>
+          </div>
           {historyLoading && <div className="calendar-loading">טוענת את נתוני ההיסטוריה…</div>}
           {!historyLoading && historyError && <div className="calendar-loading">{historyError}</div>}
         </section>
       </section>
 
       {error && (
-        <div className="app-message-backdrop" onClick={() => {}}>
+        <div className="app-message-backdrop">
           <section className="app-message-modal error-modal" onClick={event => event.stopPropagation()}>
             <div className="app-message-icon">!</div>
-            <h2>לא ניתן להתחיל עבודה</h2>
+            <h2>{error === 'כבר התחלת עבודה היום' ? 'כבר התחלת עבודה' : 'לא ניתן להתחיל עבודה'}</h2>
             <p>{error}</p>
             {error === 'כבר התחלת עבודה היום' && status?.start && (
               <p className="app-message-extra">שעת ההתחלה שלך היום: <strong>{status.start}</strong></p>
@@ -376,7 +413,7 @@ export default function Home({
                   <article className={`calendar-detail-card ${item.source === 'absence' ? 'absence-detail' : 'attendance-detail'}`} key={`${item.id || item.source}-${index}`}>
                     {item.source === 'absence' ? (
                       <>
-                        <div className="detail-title"><span>{item.absenceType === 'מחלה' ? '✚' : '♥'}</span><strong>{item.absenceType || 'היעדרות'}</strong></div>
+                        <div className="detail-title"><span>{item.absenceType === 'מחלה' ? '✚' : '☂'}</span><strong>{item.absenceType || 'היעדרות'}</strong></div>
                         <div className="detail-row"><span>תקופה</span><strong>{formatDate(item.from)}{item.to && item.to !== item.from ? ` – ${formatDate(item.to)}` : ''}</strong></div>
                         {item.note && <div className="detail-note">{item.note}</div>}
                       </>

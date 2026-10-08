@@ -43,7 +43,6 @@ export default function App() {
   const [statusLoading, setStatusLoading] = useState(Boolean(saved && !cachedStatus))
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [errorRequiresLogin, setErrorRequiresLogin] = useState(false)
   const [successMessage, setSuccessMessage] = useState('')
   const statusRequestRef = useRef(0)
 
@@ -100,7 +99,6 @@ export default function App() {
   async function login(code) {
     setLoading(true)
     setError('')
-    setErrorRequiresLogin(false)
 
     try {
       const result = await api('login', { pin: code })
@@ -139,7 +137,6 @@ export default function App() {
     setLoading(true)
     setStatusLoading(false)
     setError('')
-    setErrorRequiresLogin(false)
 
     try {
       const result = await api('startWork', {
@@ -166,9 +163,6 @@ export default function App() {
         await refreshStatus(session)
         setError('כבר התחלת עבודה היום')
       } else {
-        if (requestError.message === 'SESSION_EXPIRED') {
-          setErrorRequiresLogin(true)
-        }
         setError(
           requestError.message === 'SESSION_EXPIRED'
             ? 'החיבור פג. התחברי מחדש.'
@@ -187,7 +181,6 @@ export default function App() {
 
     setLoading(true)
     setError('')
-    setErrorRequiresLogin(false)
 
     try {
       const result = await api('endWork', {
@@ -200,15 +193,10 @@ export default function App() {
       cacheStatus(session.employeeId, nextStatus)
       setScreen('thankYou')
     } catch (requestError) {
-      if (requestError.message === 'SESSION_EXPIRED') {
-        setErrorRequiresLogin(true)
-      }
       setError(
-        requestError.message === 'SESSION_EXPIRED'
-          ? 'החיבור פג. התחברי מחדש.'
-          : requestError.message === 'NO_OPEN_SHIFT'
-            ? 'לא נמצאה התחלת עבודה פתוחה'
-            : 'לא ניתן לסיים את העבודה',
+        requestError.message === 'NO_OPEN_SHIFT'
+          ? 'לא נמצאה התחלת עבודה פתוחה'
+          : 'לא ניתן לסיים את העבודה',
       )
     } finally {
       setLoading(false)
@@ -234,11 +222,9 @@ export default function App() {
   }
 
   function closeErrorMessage() {
-    const shouldLogin = errorRequiresLogin
+    const sessionExpired = error === 'החיבור פג. התחברי מחדש.'
     setError('')
-    setErrorRequiresLogin(false)
-
-    if (shouldLogin) {
+    if (sessionExpired) {
       clearSession()
       setSession(null)
       setStatus(null)
@@ -254,7 +240,6 @@ export default function App() {
     setStatus(null)
     setStatusLoading(false)
     setSuccessMessage('')
-    setErrorRequiresLogin(false)
     setScreen('welcome')
   }
 
